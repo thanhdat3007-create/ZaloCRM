@@ -1,6 +1,6 @@
 # Tài liệu ZaloCRM
 
-Cập nhật: 2026-08-03 · Phiên bản: v3.4.0 · Phạm vi: bản Community
+Cập nhật: 2026-08-04 · Phiên bản: v3.4.0 · Phạm vi: bản Community
 
 ## Tài liệu kỹ thuật
 
@@ -23,6 +23,7 @@ Cập nhật: 2026-08-03 · Phiên bản: v3.4.0 · Phạm vi: bản Community
 | [HUONG-DAN-CAU-HINH-CLOUDFLARE-R2.md](./HUONG-DAN-CAU-HINH-CLOUDFLARE-R2.md) | Chuyển storage sang Cloudflare R2 / S3-compatible |
 | [HUONG-DAN-CAU-HINH-TELEGRAM-BRIDGE.md](./HUONG-DAN-CAU-HINH-TELEGRAM-BRIDGE.md) | Cấu hình cầu nối Zalo ↔ Telegram |
 | [HUONG-DAN-KET-NOI-ROCKET-AGENT.md](./HUONG-DAN-KET-NOI-ROCKET-AGENT.md) | Dùng Rocket Agent chạy trên cùng máy làm bộ não cho AI agent, kèm cấu hình dự phòng |
+| [HUONG-DAN-AI-TAO-PROFILE-ROCKET-CSKH.md](./HUONG-DAN-AI-TAO-PROFILE-ROCKET-CSKH.md) | **Cho AI đọc và tự làm:** tạo profile Rocket Agent làm bot CSKH bằng `hermes` CLI — phỏng vấn người dùng, nạp folder tài liệu sản phẩm, viết SOUL.md, khoá công cụ, nghiệm thu |
 | [zalocrm-api/api-documentation.md](./zalocrm-api/api-documentation.md) | Tham chiếu REST API (kèm bản `-vi.md`, PDF, Postman collection) |
 | [HUONG-DAN-API-MCP-PHAN-TICH-HOI-THOAI.md](./HUONG-DAN-API-MCP-PHAN-TICH-HOI-THOAI.md) | Cắm Claude Code / trợ lý AI vào CRM để phân tích hội thoại (REST chỉ đọc + máy chủ MCP) |
 
