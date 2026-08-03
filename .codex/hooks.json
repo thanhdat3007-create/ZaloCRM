@@ -1,0 +1,99 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/usage-quota-cache-refresh.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/usage-quota-cache-refresh.cjs\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/privacy-block.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/privacy-block.cjs\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/scout-block.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/scout-block.cjs\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/session-init.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/session-init.cjs\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/cook-after-plan-reminder.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/cook-after-plan-reminder.cjs\""
+          },
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/session-state.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/session-state.cjs\""
+          },
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/usage-quota-cache-refresh.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/usage-quota-cache-refresh.cjs\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/secret-output-guardrail.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/secret-output-guardrail.cjs\""
+          },
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/dev-rules-reminder.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/dev-rules-reminder.cjs\""
+          },
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/simplify-gate.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/simplify-gate.cjs\""
+          },
+          {
+            "type": "command",
+            "command": "node '/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/usage-quota-cache-refresh.cjs'",
+            "commandWindows": "node \"/Users/tonyhoang/Desktop/agent kit/engineer/.codex/hooks/usage-quota-cache-refresh.cjs\""
+          }
+        ]
+      }
+    ]
+  }
+}

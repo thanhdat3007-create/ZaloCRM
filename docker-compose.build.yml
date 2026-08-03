@@ -1,0 +1,15 @@
+version: "3.8"
+
+# Lớp chồng để BUILD image từ mã nguồn thay vì kéo bản dựng sẵn trên GHCR.
+# docker-compose.yml cố tình không khai `build:` để nó chạy được một mình (người dùng
+# chỉ cầm compose + .env, không có mã nguồn). Ai có mã nguồn thì dùng file này.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# Hoặc gọn hơn: ZCRM_BUILD=1 ./scripts/zalocrm-deploy.sh
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile

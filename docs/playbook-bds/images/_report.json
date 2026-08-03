@@ -1,0 +1,45 @@
+{
+  "report": [
+    {
+      "screen": "01-dang-nhap",
+      "url": "http://localhost:5173/login",
+      "errors": []
+    },
+    {
+      "screen": "02-dashboard",
+      "url": "http://localhost:5173/",
+      "errors": []
+    },
+    {
+      "screen": "03-tin-nhan",
+      "url": "http://localhost:5173/chat/conv-1",
+      "errors": []
+    },
+    {
+      "screen": "04-ban-be",
+      "url": "http://localhost:5173/friends?nick=nick-1",
+      "errors": []
+    },
+    {
+      "screen": "05-khach-hang",
+      "url": "http://localhost:5173/contacts",
+      "errors": []
+    },
+    {
+      "screen": "06-lich-hen",
+      "url": "http://localhost:5173/appointments",
+      "errors": []
+    },
+    {
+      "screen": "07-kho-anh",
+      "url": "http://localhost:5173/media",
+      "errors": []
+    },
+    {
+      "screen": "08-diem-so",
+      "url": "http://localhost:5173/settings/crm/scoring",
+      "errors": []
+    }
+  ],
+  "unmatched": []
+}

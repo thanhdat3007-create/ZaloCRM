@@ -1,0 +1,12 @@
+{
+  "name": "playbook-screenshots",
+  "private": true,
+  "type": "module",
+  "description": "Chụp ảnh minh hoạ cho docs/playbook-bds từ app thật, dữ liệu giả",
+  "scripts": {
+    "shoot": "node shoot.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.0"
+  }
+}

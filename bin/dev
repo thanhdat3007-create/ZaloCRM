@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+#
+# dev — chạy backend (tsx watch, :3000) + frontend (vite, :5173) SONG SONG trong 1 terminal.
+#
+#   ./bin/dev
+#
+# Log 2 tiến trình được gộp lại, gắn nhãn [api] / [web]. Ctrl+C dừng cả hai
+# (kill cả tiến trình con: npm → tsx/vite, tránh để lại process mồ côi giữ port).
+#
+# Việc script tự làm trước khi chạy:
+#   1. Bật hạ tầng docker (db, redis, minio) — idempotent, đã chạy thì bỏ qua.
+#   2. Cài dependency + copy .env qua bin/dev-setup nếu thiếu.
+#   3. prisma generate nếu client chưa sinh.
+#   4. Cảnh báo khi container `zalo-crm-app` còn chạy: nó dùng CHUNG database và
+#      CHUNG tài khoản Zalo → 2 listener + 2 bộ cron sẽ sync/gửi trùng.
+#
+# Biến môi trường:
+#   SKIP_INFRA=1   bỏ qua bước docker compose up (khi tự quản hạ tầng)
+
+set -eo pipefail
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+C_API=$'\033[36m'   # cyan
+C_WEB=$'\033[35m'   # magenta
+C_WARN=$'\033[33m'
+C_OFF=$'\033[0m'
+
+# ── Hạ tầng ──────────────────────────────────────────────────────────────────
+if [ -z "$SKIP_INFRA" ]; then
+  if ! docker info >/dev/null 2>&1; then
+    echo "${C_WARN}dev: Docker chưa chạy — cần db/redis/minio. Mở Docker Desktop rồi thử lại.${C_OFF}" >&2
+    exit 1
+  fi
+  echo "dev: bật hạ tầng (db, redis, minio)..."
+  docker compose -f "$REPO_ROOT/docker-compose.yml" up -d db redis minio >/dev/null
+fi
+
+if docker ps --filter name=zalo-crm-app --filter status=running --format '{{.Names}}' 2>/dev/null | grep -q .; then
+  echo "${C_WARN}dev: container zalo-crm-app ĐANG CHẠY — dùng chung DB + tài khoản Zalo với bản dev.${C_OFF}" >&2
+  echo "${C_WARN}     Nên tắt trước:  docker compose stop app${C_OFF}" >&2
+fi
+
+# ── Dependency + env ─────────────────────────────────────────────────────────
+"$REPO_ROOT/bin/dev-setup"
+
+if [ ! -f "$REPO_ROOT/backend/.env" ]; then
+  echo "${C_WARN}dev: thiếu backend/.env — backend sẽ nối localhost:5432 (sai port, hạ tầng dev ở 5433).${C_OFF}" >&2
+  echo "${C_WARN}     Tạo từ mẫu: cp backend/.env.example backend/.env rồi sửa DATABASE_URL/REDIS_URL.${C_OFF}" >&2
+fi
+
+if [ ! -d "$REPO_ROOT/backend/node_modules/.prisma/client" ]; then
+  echo "dev: sinh Prisma client..."
+  (cd "$REPO_ROOT/backend" && npx prisma generate >/dev/null)
+fi
+
+# ── Chạy song song ───────────────────────────────────────────────────────────
+PIDS=""
+
+# Giết cả cây tiến trình: npm run dev đẻ ra tsx/vite, kill mỗi npm sẽ để lại con giữ port.
+kill_tree() {
+  local pid="$1" child
+  for child in $(pgrep -P "$pid" 2>/dev/null); do kill_tree "$child"; done
+  # Phải là TERM: tiến trình chạy nền (`&`) trong shell không job-control kế thừa
+  # SIGINT = ignore, nên Ctrl+C KHÔNG tự giết npm/tsx/vite — script phải TERM chúng.
+  kill -TERM "$pid" 2>/dev/null || true
+}
+
+STOPPING=0
+cleanup() {
+  [ "$STOPPING" = 1 ] && return 0   # EXIT trap chạy sau INT/TERM → chỉ dọn 1 lần
+  STOPPING=1
+  trap - INT TERM EXIT
+  echo ""
+  echo "dev: đang dừng..."
+  for pid in $PIDS; do kill_tree "$pid"; done
+  for _ in 1 2 3 4 5 6 7 8 9 10; do          # chờ tối đa ~5s cho tiến trình thoát hẳn
+    pgrep -P "$$" >/dev/null 2>&1 || break
+    sleep 0.5
+  done
+  echo "dev: đã dừng."
+}
+trap cleanup INT TERM EXIT
+
+# awk + fflush thay cho `sed -u` (BSD sed trên macOS không có -u → log bị kẹt buffer).
+run() {
+  local label="$1" color="$2" dir="$3"
+  (
+    # `2>/dev/null` bọc ngoài nhóm chỉ nuốt thông báo job của bash ("Terminated: 15
+    # npm run dev") lúc dừng — stderr của npm/tsx/vite đã được gộp vào stdout bằng
+    # `2>&1` bên trong nên log lỗi thật vẫn hiện đủ.
+    cd "$REPO_ROOT/$dir" && { npm run dev 2>&1 |
+      awk -v p="${color}[${label}]${C_OFF} " '{ print p $0; fflush() }'; } 2>/dev/null
+  ) &
+  PIDS="$PIDS $!"
+  # Gỡ khỏi job table: bash sẽ không in "Terminated: 15 npm run dev" lúc dừng.
+  # Vòng giám sát + kill_tree dùng kill/pgrep nên không phụ thuộc job table.
+  disown $! 2>/dev/null || true
+}
+
+echo "dev: backend → http://localhost:3000   frontend → http://localhost:5173   (Ctrl+C để dừng)"
+run api "$C_API" backend
+run web "$C_WEB" frontend
+
+# bash 3.2 (mặc định trên macOS) không có `wait -n` → poll: một bên chết thì dừng cả hai.
+while [ "$STOPPING" = 0 ]; do
+  for pid in $PIDS; do
+    # exit → EXIT trap gọi cleanup, tiến trình còn lại được dọn theo.
+    kill -0 "$pid" 2>/dev/null || { echo "${C_WARN}dev: một tiến trình đã thoát — dừng phần còn lại.${C_OFF}" >&2; exit 1; }
+  done
+  sleep 1
+done

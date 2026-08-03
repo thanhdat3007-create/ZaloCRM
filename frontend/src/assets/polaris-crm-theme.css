@@ -1,0 +1,583 @@
+/* ════════════════════════════════════════════════════════════════════════
+   ZaloCRM — SHOPIFY POLARIS RESKIN  (2026-08-03)
+   Token nguồn: polaris-tokens.css (verify từ polaris-react.shopify.com).
+   ────────────────────────────────────────────────────────────────────────
+   CHIẾN LƯỢC
+   Phần lớn style của app đọc token dùng chung (--brand, --ink, --line,
+   --surface, --r-, --sh-) — kể cả style scoped trong SFC, report-kit.css
+   (--rk- dẫn xuất từ --brand) và airtable.css/atlas (--at- dẫn xuất từ
+   --ink/--brand). Nên file này RETARGET giá trị token sang Polaris thay vì
+   viết lại rule layout, rồi chỉ thêm rule tường minh ở những chỗ:
+     a) hardcode hex (rbac-page.css, logo nav, tab active nav)
+     b) hình dạng khác biệt thật (radius, shadow, focus ring)
+   ────────────────────────────────────────────────────────────────────────
+   VÌ SAO PREFIX LÀ `:root[data-theme="polaris"]` CHỨ KHÔNG PHẢI `.v-theme--polaris`
+   1. Vuetify chỉ gắn `v-theme--*` lên gốc <v-app>. 19 component dùng
+      `<Teleport to="body">` + `ConfirmHost` render NGOÀI gốc đó → scope theo
+      `.v-theme--polaris` sẽ không tới được chúng (custom property kế thừa
+      theo cây DOM, không theo cây component).
+   2. <html>/<body> cũng nằm ngoài <v-app>.
+   3. Router có 60 route lazy-load, `cssCodeSplit` mặc định bật → CSS của
+      chunk lazy được chèn SAU file này. Style scoped trong SFC có specificity
+      (0,2,0); `:root[data-theme="polaris"] .x` = (0,3,0) nên thắng tất định,
+      không phụ thuộc thứ tự nạp.
+   `data-theme` được main.ts đồng bộ từ `vuetify.theme.global.name`, nên vẫn
+   đổi/rollback theme được bình thường.
+   ────────────────────────────────────────────────────────────────────────
+   NGUYÊN TẮC: chỉ đổi HÌNH THỨC. Không đặt height/min-height/padding/display/
+   position/flex/grid — đó là layout, đổi sẽ thành regression.
+   ────────────────────────────────────────────────────────────────────────
+   MỤC LỤC
+   PART 1 Retarget token dùng chung   PART 2 Retarget token Smax
+   PART 3 Nền + typography            PART 4 Vuetify components
+   PART 5 Top nav (class thật)        PART 6 Báo cáo (.rpt-scope)
+   PART 7 Cài đặt/RBAC (.dept-page)   PART 8 Airtable/Atlas scope
+   ════════════════════════════════════════════════════════════════════════ */
+
+
+/* ╔══ PART 1 · RETARGET TOKEN DÙNG CHUNG ════════════════════════════════╗ */
+/* Đây là phần làm phần lớn công việc: mọi rule (kể cả SFC scoped) đọc các
+   biến này đều tự đổi sang Polaris. */
+:root[data-theme='polaris'] {
+  /* Action — Polaris hiện tại dùng near-black cho CTA đặc, KHÔNG phải xanh lá
+     (#008060 là Polaris v9–v11, đã bị thay ở bản uplift 2023) */
+  --brand:        var(--p-fill-brand);         /* #303030 */
+  --brand-600:    var(--p-fill-brand-hover);   /* #1a1a1a */
+  --brand-700:    var(--p-text-emphasis);      /* #005bd3 — vai trò chữ/viền tương tác */
+  --brand-soft:   var(--p-surface-emphasis);   /* #f0f2ff */
+  --brand-softer: var(--p-surface-hover);      /* #f7f7f7 — nền hover hàng bảng */
+  --brand-bright: var(--p-fill-emphasis);      /* #005bd3 */
+
+  /* Neutrals.
+     --ink-3 giữ ở #616161 (6.19:1 trên trắng) chứ KHÔNG dùng #8a8a8a: đây là
+     token chữ phụ/caption dùng ở 56 chỗ trong .vue, #8a8a8a chỉ đạt 3.54:1 → trượt AA. */
+  --ink:     var(--p-text);             /* #303030 */
+  --ink-2:   var(--p-text-secondary);   /* #616161 */
+  --ink-3:   var(--p-text-secondary);   /* #616161 — AA cho chữ thường */
+  /* --ink-4 KHÔNG dùng --p-text-disabled (#b5b5b5, 2.05:1): token này thực tế còn
+     dùng cho chữ NHÌN THẤY (timestamp 10px ở FollowUpHistoryDialog, FollowUpCard…)
+     chứ không riêng placeholder. #8a8a8a = 3.54:1, tốt hơn cả bản HS cũ (#97a0b3, 2.63:1). */
+  --ink-4:   var(--p-icon-secondary);   /* #8a8a8a */
+  --line:    var(--p-border);           /* #e3e3e3 */
+  --line-2:  var(--p-border-secondary); /* #ebebeb */
+  --surface:   var(--p-surface);            /* #ffffff */
+  --surface-2: var(--p-surface-secondary);  /* #f7f7f7 */
+  --surface-3: var(--p-surface-tertiary);   /* #f3f3f3 */
+
+  /* Shell — thanh nav tối kiểu Shopify admin, bỏ gradient teal-navy */
+  --shell:       var(--p-bg-inverse);   /* #1a1a1a */
+  --shell-2:     #303030;
+  --shell-line:  rgba(255, 255, 255, .12);
+  --shell-ink:   var(--p-text-inverse); /* #e3e3e3 */
+  --shell-ink-2: #b5b5b5;
+
+  /* Semantic */
+  --success: var(--p-fill-success);     --success-soft: var(--p-surface-success);
+  --warning: var(--p-icon-warning);     --warning-soft: var(--p-surface-warning);
+  --error:   var(--p-fill-critical);    --error-soft:   var(--p-surface-critical);
+  --info:    var(--p-fill-emphasis);    --info-soft:    var(--p-surface-info);
+  --female:  #c71585;
+  --male:    var(--p-fill-emphasis);
+
+  /* Lead score ramp */
+  --score-0:    var(--p-text-disabled);
+  --score-low:  var(--p-icon-warning);
+  --score-mid:  var(--p-fill-emphasis);
+  --score-high: var(--p-fill-success);
+
+  /* Chip palette CRM — giữ đủ hue để phân biệt nhãn, đưa về sắc độ Polaris */
+  --chip-red:    #c70a24;  --chip-red-bg:    #fee8eb;
+  --chip-orange: #b28400;  --chip-orange-bg: #fff1e3;
+  --chip-amber:  #998a00;  --chip-amber-bg:  #fff8db;
+  --chip-green:  #047b5d;  --chip-green-bg:  #cdfed4;
+  --chip-blue:   #005bd3;  --chip-blue-bg:   #eaf4ff;
+  --chip-purple: #5700d1;  --chip-purple-bg: #f8f7ff;
+
+  /* Radii — về thang Polaris (4/8/12/16) */
+  --r-xs:   var(--p-r-100);
+  --r-sm:   var(--p-r-200);
+  --r-md:   var(--p-r-200);
+  --r-lg:   var(--p-r-300);
+  --r-xl:   var(--p-r-400);
+  --r-pill: var(--p-r-full);
+
+  /* Shadow — Polaris ưu tiên viền 1px, shadow rất nhẹ */
+  --sh-xs:  var(--p-sh-100);
+  --sh-sm:  var(--p-sh-100);
+  --sh-md:  var(--p-sh-200);
+  --sh-lg:  var(--p-sh-300);
+  --sh-pop: var(--p-sh-400);
+
+  /* Type */
+  --font: var(--p-font-sans);
+  --mono: var(--p-font-mono);
+
+  /* Nav — phẳng, cùng màu 2 đầu để .smax-topnav (dùng linear-gradient) thành nền đặc */
+  --nav-grad-a: var(--p-bg-inverse);
+  --nav-grad-b: var(--p-bg-inverse);
+  --nav-accent: #ffffff;
+
+  /* KHÔNG retarget --nav-h và --smax-topnav-h: 2 biến này điều khiển chiều cao
+     và các phép calc(100vh - …) cho vùng cuộn. Đổi = vỡ layout. */
+}
+
+
+/* ╔══ PART 2 · RETARGET TOKEN SMAX ══════════════════════════════════════╗ */
+:root[data-theme='polaris'] {
+  --smax-primary:       var(--p-fill-brand);
+  --smax-primary-hover: var(--p-fill-brand-hover);
+  --smax-primary-soft:  var(--p-surface-emphasis);
+  --smax-primary-700:   var(--p-text-emphasis);
+  --smax-success: var(--p-fill-success);
+  --smax-warning: var(--p-icon-warning);
+  --smax-info:    var(--p-fill-emphasis);
+  --smax-error:   var(--p-fill-critical);
+
+  --smax-grey-50:  var(--p-surface-hover);
+  --smax-grey-100: var(--p-bg);
+  --smax-grey-200: var(--p-border);
+  --smax-grey-300: var(--p-border-hover);
+  --smax-grey-700: var(--p-text-secondary);
+  --smax-text:     var(--p-text);
+
+  --smax-bg:          var(--p-surface);
+  --smax-header-bg:   var(--p-bg-inverse);
+  --smax-bubble-self: var(--p-surface-emphasis);
+  --smax-group-bg:    var(--p-surface-warning);
+
+  --smax-female: #c71585;
+  --smax-male:   var(--p-fill-emphasis);
+
+  --smax-chip-red:    #c70a24;  --smax-chip-red-text:    #8e0b21;  --smax-chip-red-active:    #c70a24;
+  --smax-chip-purple: #8051ff;  --smax-chip-purple-text: #5700d1;  --smax-chip-purple-active: #5700d1;
+  --smax-chip-orange: #ffb800;  --smax-chip-orange-text: #5e4200;  --smax-chip-orange-active: #b28400;
+  --smax-chip-green:  #047b5d;  --smax-chip-green-text:  #014b40;  --smax-chip-green-active:  #047b5d;
+  --smax-chip-blue:   #005bd3;  --smax-chip-blue-text:   #003a5a;  --smax-chip-blue-active:   #005bd3;
+  --smax-chip-yellow: #ffe600;  --smax-chip-yellow-text: #4f4700;  --smax-chip-yellow-active: #998a00;
+
+  --smax-radius-sm: var(--p-r-100);
+  --smax-radius-md: var(--p-r-200);
+  --smax-radius-lg: var(--p-r-200);
+  --smax-radius-xl: var(--p-r-300);
+  /* --smax-font-* và --smax-topnav-h giữ nguyên: font-size/chiều cao = layout */
+}
+
+
+/* ╔══ PART 3 · NỀN + TYPOGRAPHY ═════════════════════════════════════════╗ */
+:root[data-theme='polaris'],
+:root[data-theme='polaris'] body {
+  font-family: var(--p-font-sans);
+  color: var(--p-text);
+  background: var(--p-bg);
+}
+
+/* main.css ép font hệ thống lên .smax-app — kéo về Inter */
+:root[data-theme='polaris'] .smax-app,
+:root[data-theme='polaris'] .smax-app * { font-family: var(--p-font-sans); }
+
+/* rbac-page.css xin family 'Inter' (không có ' Variable') → sẽ rơi về system font */
+:root[data-theme='polaris'] .dept-page,
+:root[data-theme='polaris'] .panel { font-family: var(--p-font-sans); }
+
+/* Scrollbar — thumb xám trung tính */
+:root[data-theme='polaris'] ::-webkit-scrollbar-thumb {
+  background: #b5b5b5;
+  background-clip: padding-box;
+}
+:root[data-theme='polaris'] ::-webkit-scrollbar-thumb:hover {
+  background: #8a8a8a;
+  background-clip: padding-box;
+}
+
+/* Focus ring Polaris. KHÔNG đặt border-radius ở đây — đổi hình dạng phần tử
+   khi focus bàn phím là lỗi thị giác. */
+:root[data-theme='polaris'] :focus-visible {
+  outline: var(--p-bw-050) solid var(--p-border-focus);
+  outline-offset: 1px;
+}
+
+
+/* ╔══ PART 4 · VUETIFY COMPONENTS ═══════════════════════════════════════╗ */
+/* Chỉ màu/viền/bo góc/chữ. Không đụng height/padding — Vuetify tự lo layout. */
+
+/* ── Button ───────────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-btn {
+  font-family: var(--p-font-sans);
+  font-weight: var(--p-fw-medium);
+  letter-spacing: var(--p-ls-normal);
+  text-transform: none;
+  border-radius: var(--p-r-200);
+}
+:root[data-theme='polaris'] .v-btn--variant-flat.bg-primary,
+:root[data-theme='polaris'] .v-btn--variant-elevated.bg-primary {
+  background: var(--p-fill-brand);
+  color: var(--p-text-on-fill);
+  box-shadow: var(--p-sh-button-primary);
+}
+:root[data-theme='polaris'] .v-btn--variant-flat.bg-primary:hover,
+:root[data-theme='polaris'] .v-btn--variant-elevated.bg-primary:hover {
+  background: var(--p-fill-brand-hover);
+}
+:root[data-theme='polaris'] .v-btn--variant-flat.bg-primary:active {
+  box-shadow: var(--p-sh-button-primary-inset);
+}
+:root[data-theme='polaris'] .v-btn--variant-text:hover { background: var(--p-fill-disabled); }
+
+/* Elevation Vuetify → thang shadow Polaris (nhẹ hơn nhiều) */
+:root[data-theme='polaris'] .elevation-1,
+:root[data-theme='polaris'] .elevation-2 { box-shadow: var(--p-sh-100) !important; }
+:root[data-theme='polaris'] .elevation-3,
+:root[data-theme='polaris'] .elevation-4,
+:root[data-theme='polaris'] .elevation-6 { box-shadow: var(--p-sh-200) !important; }
+:root[data-theme='polaris'] .elevation-8,
+:root[data-theme='polaris'] .elevation-12 { box-shadow: var(--p-sh-300) !important; }
+:root[data-theme='polaris'] .elevation-16,
+:root[data-theme='polaris'] .elevation-24 { box-shadow: var(--p-sh-400) !important; }
+
+/* ── Card ─────────────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-card {
+  border-radius: var(--p-r-300);
+  background: var(--p-surface);
+  border: var(--p-bw-025) solid var(--p-border);
+  box-shadow: var(--p-sh-100);
+  color: var(--p-text);
+}
+:root[data-theme='polaris'] .v-card-title {
+  font-weight: var(--p-fw-semibold);
+  letter-spacing: var(--p-ls-normal);
+}
+:root[data-theme='polaris'] .v-card-subtitle { color: var(--p-text-secondary); opacity: 1; }
+
+/* ── Field / input ────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-field {
+  border-radius: var(--p-r-200);
+  background: var(--p-input-surface);
+}
+:root[data-theme='polaris'] .v-field--variant-outlined .v-field__outline__start,
+:root[data-theme='polaris'] .v-field--variant-outlined .v-field__outline__notch::before,
+:root[data-theme='polaris'] .v-field--variant-outlined .v-field__outline__notch::after,
+:root[data-theme='polaris'] .v-field--variant-outlined .v-field__outline__end {
+  border-color: var(--p-input-border);
+  opacity: 1;
+}
+:root[data-theme='polaris'] .v-field:hover .v-field__outline__start,
+:root[data-theme='polaris'] .v-field:hover .v-field__outline__notch::before,
+:root[data-theme='polaris'] .v-field:hover .v-field__outline__notch::after,
+:root[data-theme='polaris'] .v-field:hover .v-field__outline__end {
+  border-color: var(--p-input-border-hover);
+}
+/* Polaris dùng ring xanh 2px thay vì tô viền theo primary */
+:root[data-theme='polaris'] .v-field--focused { box-shadow: var(--p-focus-ring); }
+:root[data-theme='polaris'] .v-field--focused .v-field__outline__start,
+:root[data-theme='polaris'] .v-field--focused .v-field__outline__notch::before,
+:root[data-theme='polaris'] .v-field--focused .v-field__outline__notch::after,
+:root[data-theme='polaris'] .v-field--focused .v-field__outline__end {
+  border-color: var(--p-input-border-active);
+}
+:root[data-theme='polaris'] .v-field--error { box-shadow: 0 0 0 2px var(--p-fill-critical); }
+:root[data-theme='polaris'] .v-label { color: var(--p-text-secondary); opacity: 1; }
+:root[data-theme='polaris'] .v-input--error .v-messages { color: var(--p-text-critical); }
+
+/* ── Chip / badge ─────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-chip {
+  border-radius: var(--p-r-full);
+  font-weight: var(--p-fw-medium);
+  letter-spacing: var(--p-ls-normal);
+}
+:root[data-theme='polaris'] .v-badge__badge {
+  font-weight: var(--p-fw-semibold);
+  border-radius: var(--p-r-full);
+}
+
+/* ── Dialog / overlay / menu / tooltip ────────────────────────────────── */
+:root[data-theme='polaris'] .v-overlay__scrim { background: var(--p-backdrop); }
+:root[data-theme='polaris'] .v-dialog > .v-overlay__content > .v-card {
+  border-radius: var(--p-r-300);
+  box-shadow: var(--p-sh-400);
+  border: var(--p-bw-025) solid var(--p-border);
+}
+:root[data-theme='polaris'] .v-menu > .v-overlay__content {
+  border-radius: var(--p-r-200);
+  box-shadow: var(--p-sh-300);
+  border: var(--p-bw-025) solid var(--p-border);
+}
+:root[data-theme='polaris'] .v-menu > .v-overlay__content > .v-list { border: none; box-shadow: none; }
+:root[data-theme='polaris'] .v-tooltip > .v-overlay__content {
+  background: var(--p-bg-inverse);
+  color: var(--p-text-inverse);
+  border-radius: var(--p-r-200);
+}
+
+/* ── List ─────────────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-list { background: var(--p-surface); color: var(--p-text); }
+:root[data-theme='polaris'] .v-list-item { border-radius: var(--p-r-200); }
+:root[data-theme='polaris'] .v-list-item-subtitle { color: var(--p-text-secondary); opacity: 1; }
+:root[data-theme='polaris'] .v-list-item:hover > .v-list-item__overlay,
+:root[data-theme='polaris'] .v-list-item--active > .v-list-item__overlay { opacity: 0; }
+:root[data-theme='polaris'] .v-list-item:hover { background: var(--p-surface-hover); }
+:root[data-theme='polaris'] .v-list-item--active {
+  background: var(--p-surface-selected);
+  color: var(--p-text);
+  font-weight: var(--p-fw-medium);
+}
+
+/* ── Table ────────────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-table { background: var(--p-surface); color: var(--p-text); }
+:root[data-theme='polaris'] .v-table > .v-table__wrapper > table > thead > tr > th {
+  background: var(--p-surface-secondary);
+  color: var(--p-text-secondary);
+  font-weight: var(--p-fw-semibold);
+  letter-spacing: var(--p-ls-normal);
+  text-transform: none;              /* Polaris không ALL-CAPS header bảng */
+  border-bottom: var(--p-bw-025) solid var(--p-border);
+}
+:root[data-theme='polaris'] .v-table > .v-table__wrapper > table > tbody > tr > td {
+  border-bottom: var(--p-bw-025) solid var(--p-border-secondary);
+  color: var(--p-text);
+}
+:root[data-theme='polaris'] .v-table > .v-table__wrapper > table > tbody > tr:hover > td {
+  background: var(--p-surface-hover);
+}
+:root[data-theme='polaris'] .v-data-table-footer { color: var(--p-text-secondary); }
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-tab {
+  letter-spacing: var(--p-ls-normal);
+  text-transform: none;
+  font-weight: var(--p-fw-medium);
+  color: var(--p-text-secondary);
+}
+:root[data-theme='polaris'] .v-tab--selected { color: var(--p-text); font-weight: var(--p-fw-semibold); }
+:root[data-theme='polaris'] .v-tab__slider { background: var(--p-fill-brand); }
+
+/* ── Alert ────────────────────────────────────────────────────────────── */
+:root[data-theme='polaris'] .v-alert {
+  border-radius: var(--p-r-300);
+  border: var(--p-bw-025) solid var(--p-border);
+  box-shadow: none;
+}
+
+/* ── Selection controls / progress ────────────────────────────────────── */
+:root[data-theme='polaris'] .v-selection-control__input { color: var(--p-fill-brand); }
+:root[data-theme='polaris'] .v-progress-linear { border-radius: var(--p-r-full); }
+:root[data-theme='polaris'] .v-progress-circular { color: var(--p-fill-brand); }
+
+/* ── App bar / drawer (MobileLayout) ──────────────────────────────────── */
+:root[data-theme='polaris'] .v-app-bar {
+  background: var(--p-bg-inverse);
+  color: var(--p-text-inverse);
+  box-shadow: none;
+}
+:root[data-theme='polaris'] .v-navigation-drawer {
+  background: var(--p-surface);
+  border-right: var(--p-bw-025) solid var(--p-border);
+}
+
+
+/* ╔══ PART 5 · TOP NAV (class thật của DefaultLayout) ═══════════════════╗ */
+/* .smax-topnav/.nav-tab đã đọc --nav-grad-a/-b, --shell-ink, --r-sm nên PART 1
+   lo phần lớn. Chỉ còn 3 chỗ hardcode màu HS cần ép. */
+:root[data-theme='polaris'] .smax-topnav {
+  box-shadow: none;                  /* bỏ viền sáng + đổ bóng của shell HS */
+}
+/* Ô logo: gradient teal HS → nền trong suốt nhẹ trên thanh tối */
+:root[data-theme='polaris'] .hs-bbox {
+  background: rgba(255, 255, 255, .1);
+  border: var(--p-bw-025) solid rgba(255, 255, 255, .15);
+  border-radius: var(--p-r-200);
+  box-shadow: none;
+}
+:root[data-theme='polaris'] .hs-b2 {
+  color: #b5b5b5;
+  letter-spacing: var(--p-ls-normal);
+  text-transform: none;
+}
+/* Tab đang chọn: nền xanh HS + gạch chân → pill sáng đặc kiểu Polaris */
+:root[data-theme='polaris'] .nav-tab.active {
+  background: rgba(255, 255, 255, .16);
+  color: #fff;
+  box-shadow: none;
+}
+:root[data-theme='polaris'] .nav-tab.active .ic-svg { color: #fff; }
+
+
+/* ╔══ PART 6 · BÁO CÁO (.rpt-scope) ═════════════════════════════════════╗ */
+/* report-kit.css dẫn --rk-brand từ --brand nên màu thương hiệu tự đổi.
+   Đây là các giá trị nó hardcode. */
+:root[data-theme='polaris'] .rpt-scope {
+  --rk-ink:       var(--p-text);
+  --rk-body:      var(--p-text);
+  --rk-muted:     var(--p-text-secondary);
+  --rk-faint:     var(--p-text-secondary);
+  --rk-bg:        var(--p-bg);
+  --rk-surface:   var(--p-surface);
+  --rk-surface-2: var(--p-surface-secondary);
+  --rk-hairline:  var(--p-border);
+  --rk-brand-bright: var(--p-fill-emphasis);
+  --rk-ok:     var(--p-fill-success);  --rk-ok-soft:     var(--p-surface-success);
+  --rk-warn:   var(--p-icon-warning);  --rk-warn-soft:   var(--p-surface-warning);
+  --rk-danger: var(--p-fill-critical); --rk-danger-soft: var(--p-surface-critical);
+  font-family: var(--p-font-sans);
+  letter-spacing: var(--p-ls-normal);
+}
+:root[data-theme='polaris'] .rpt-scope .rpt-head .ic {
+  background: var(--p-fill-brand);       /* bỏ gradient */
+  border-radius: var(--p-r-200);
+}
+:root[data-theme='polaris'] .rpt-scope .seg button.on {
+  background: var(--p-fill-brand);
+  color: var(--p-text-on-fill);
+  box-shadow: none;
+}
+:root[data-theme='polaris'] .rpt-scope .rk-btn { border-radius: var(--p-r-200); }
+:root[data-theme='polaris'] .rpt-scope .rk-btn.primary {
+  background: var(--p-fill-brand);
+  border-color: var(--p-fill-brand);
+}
+:root[data-theme='polaris'] .rpt-scope .kpi,
+:root[data-theme='polaris'] .rpt-scope .card { border-radius: var(--p-r-300); }
+:root[data-theme='polaris'] .rpt-scope .kpi .kic {
+  background: var(--p-surface-brand);
+  color: var(--p-icon-brand);
+}
+:root[data-theme='polaris'] .rpt-scope .tbl th {
+  text-transform: none;
+  letter-spacing: var(--p-ls-normal);
+}
+:root[data-theme='polaris'] .rpt-scope .pill { background: var(--p-surface-tertiary); color: var(--p-text-secondary); }
+:root[data-theme='polaris'] .rpt-scope .bar { background: var(--p-surface-tertiary); }
+:root[data-theme='polaris'] .rpt-scope .bar > i { background: var(--p-fill-brand); }
+:root[data-theme='polaris'] .rpt-scope .chart .stack i { background: var(--p-fill-brand); }
+:root[data-theme='polaris'] .rpt-scope .chart .stack i.b { background: #b5b5b5; }
+:root[data-theme='polaris'] .rpt-scope .funnel .track > i {
+  background: var(--p-fill-brand);      /* bỏ gradient */
+}
+/* Heatmap: thang xanh HS → thang xám đơn sắc Polaris */
+:root[data-theme='polaris'] .rpt-scope .heat .c { background: var(--p-surface-tertiary); }
+:root[data-theme='polaris'] .rpt-scope .heat .c.l1 { background: #d6d6d6; }
+:root[data-theme='polaris'] .rpt-scope .heat .c.l2 { background: #b5b5b5; }
+:root[data-theme='polaris'] .rpt-scope .heat .c.l3 { background: #8a8a8a; }
+:root[data-theme='polaris'] .rpt-scope .heat .c.l4 { background: #616161; }
+:root[data-theme='polaris'] .rpt-scope .heat .c.l5 { background: var(--p-fill-brand); }
+:root[data-theme='polaris'] .rpt-shell { background: var(--p-bg); }
+:root[data-theme='polaris'] .rpt-subnav { background: var(--p-surface); border-bottom-color: var(--p-border); }
+:root[data-theme='polaris'] .rpt-subnav a { color: var(--p-text-secondary); }
+:root[data-theme='polaris'] .rpt-subnav a.router-link-active {
+  color: var(--p-text);
+  border-bottom-color: var(--p-fill-brand);
+}
+
+
+/* ╔══ PART 7 · CÀI ĐẶT / RBAC (.dept-page) ══════════════════════════════╗ */
+/* rbac-page.css hardcode hex, không có lớp token → phải override tường minh.
+   MỌI selector ở đây phải neo vào .dept-page: rbac-page.css:526 ghi rõ
+   `.section` từng leak ra .section của ConversationFilterSidebar (chat cột 1)
+   và đã phải fix — không lặp lại lỗi đó. */
+:root[data-theme='polaris'] .dept-page {
+  color: var(--p-text);
+  letter-spacing: var(--p-ls-normal);
+  background: var(--p-surface);
+}
+:root[data-theme='polaris'] .dept-page .hero-sub { color: var(--p-text-secondary); }
+:root[data-theme='polaris'] .dept-page .stat-card { border-radius: var(--p-r-300); }
+:root[data-theme='polaris'] .dept-page .stat-primary { background: var(--p-surface-secondary); }
+:root[data-theme='polaris'] .dept-page .stat-primary::before { background: var(--p-fill-brand); }
+:root[data-theme='polaris'] .dept-page .stat-forest { background: var(--p-surface-success); }
+:root[data-theme='polaris'] .dept-page .stat-forest::before { background: var(--p-fill-success); }
+:root[data-theme='polaris'] .dept-page .stat-mustard { background: var(--p-surface-warning); }
+:root[data-theme='polaris'] .dept-page .stat-mustard::before { background: var(--p-icon-warning); }
+:root[data-theme='polaris'] .dept-page .stat-cream { background: var(--p-surface-info); }
+:root[data-theme='polaris'] .dept-page .stat-cream::before { background: var(--p-fill-emphasis); }
+:root[data-theme='polaris'] .dept-page .stat-label {
+  text-transform: none;
+  letter-spacing: var(--p-ls-normal);
+  color: var(--p-text-secondary);
+}
+:root[data-theme='polaris'] .dept-page .stat-value { color: var(--p-text); }
+:root[data-theme='polaris'] .dept-page .stat-unit { color: var(--p-text-secondary); }
+:root[data-theme='polaris'] .dept-page .search-box,
+:root[data-theme='polaris'] .dept-page .filter-select {
+  background: var(--p-input-surface);
+  border-color: var(--p-input-border);
+  border-radius: var(--p-r-200);
+  color: var(--p-text);
+}
+:root[data-theme='polaris'] .dept-page .search-box:focus-within {
+  border-color: var(--p-input-border-active);
+  background: var(--p-surface);
+  box-shadow: var(--p-focus-ring);
+}
+:root[data-theme='polaris'] .dept-page .search-icon,
+:root[data-theme='polaris'] .dept-page .search-clear { color: var(--p-icon-secondary); }
+:root[data-theme='polaris'] .dept-page .search-box input { color: var(--p-text); }
+:root[data-theme='polaris'] .dept-page .dept-card,
+:root[data-theme='polaris'] .dept-page .section {
+  border-radius: var(--p-r-300);
+  border-color: var(--p-border);
+  background: var(--p-surface);
+}
+/* .panel là drawer trượt sát mép phải (width 460px, height 100vh): GIỮ shadow
+   tách lớp của nó, chỉ đổi màu viền. Bo góc cũng không đặt vì nó áp mép màn hình.
+   KHÔNG neo vào .dept-page: `UserEditPanel.vue` teleport `.panel` ra thẳng <body>
+   nên rule neo sẽ không match. An toàn vì `.panel` chỉ do 2 panel RBAC dùng
+   (UserEditPanel, PermissionGroupEditPanel) — đã grep xác nhận, khác với `.section`
+   vốn có va chạm với sidebar chat nên vẫn phải neo. */
+:root[data-theme='polaris'] .panel { border-color: var(--p-border); }
+:root[data-theme='polaris'] .panel-backdrop { background: var(--p-backdrop); }
+:root[data-theme='polaris'] .dept-page .head-accent { background: var(--p-fill-brand); }
+
+
+/* ╔══ PART 8 · AIRTABLE/ATLAS SCOPE (Lịch hẹn · Dashboard · Marketing) ══╗ */
+/* airtable.css/atlas đã map --at- sang --ink/--brand/--surface nên phần lớn tự
+   đổi theo PART 1. Đây là các token nó hardcode. */
+:root[data-theme='polaris'] .airtable-scope {
+  --at-primary:        var(--p-fill-brand);
+  --at-primary-active: var(--p-fill-brand-hover);
+  --at-border-strong:  var(--p-border-hover);
+  --at-surface-strong: var(--p-surface-brand);
+  --at-bg:             var(--p-bg);
+
+  --at-coral:   var(--p-fill-critical);
+  --at-forest:  var(--p-fill-success);
+  --at-cream:   var(--p-surface-caution);
+  --at-peach:   var(--p-surface-warning);
+  --at-mint:    var(--p-surface-success);
+  --at-yellow:  var(--p-fill-caution);
+  --at-mustard: var(--p-icon-warning);
+
+  --at-link:        var(--p-text-link);
+  --at-link-active: var(--p-text-emphasis);
+  --at-info-border: var(--p-border-info);
+  --at-success:     var(--p-fill-success);
+
+  --at-action:       var(--p-fill-brand);
+  --at-action-soft:  var(--p-surface-brand);
+  --at-hint:         var(--p-text-disabled);
+  --at-atlas-danger: var(--p-fill-critical);
+
+  --at-r-xs:   var(--p-r-050);
+  --at-r-sm:   var(--p-r-200);
+  --at-r-md:   var(--p-r-200);
+  --at-r-lg:   var(--p-r-300);
+  --at-r-pill: var(--p-r-full);
+
+  font-family: var(--p-font-sans);
+}
+:root[data-theme='polaris'] .airtable-scope.dh-v4 {
+  --at-bar-track: var(--p-surface-tertiary);
+  background: var(--p-bg);
+}
+:root[data-theme='polaris'] .at-roletabs {
+  background: var(--p-surface);
+  border-bottom-color: var(--p-border);
+}
+:root[data-theme='polaris'] .at-roletab.is-active {
+  color: var(--p-text);
+  border-bottom-color: var(--p-fill-brand);
+}
+:root[data-theme='polaris'] .at-roletab__cnt { background: var(--p-fill-critical); }
+:root[data-theme='polaris'] .at-roletabs__scope {
+  background: var(--p-surface-brand);
+  color: var(--p-text);
+  border-radius: var(--p-r-200);
+}

@@ -1,0 +1,196 @@
+/* ════════════════════════════════════════════════════════════════════════
+   ZaloCRM — SHOPIFY POLARIS DESIGN TOKENS
+   Nguồn: https://polaris-react.shopify.com/tokens/{color,font,shape,space,shadow}
+   Verify 2026-08-03 · Polaris v12/v13 ("uplift" 2023) · xem
+   plans/…-shopify-polaris/reports/polaris-tokens-verified.md
+   ────────────────────────────────────────────────────────────────────────
+   LƯU Ý: Polaris hiện tại KHÔNG dùng xanh lá #008060 làm primary nữa
+   (đó là v9–v11). Primary = near-black #303030; xanh lá chỉ còn vai trò
+   success. Blue #005BD3 dùng cho link / focus / emphasis.
+   ────────────────────────────────────────────────────────────────────────
+   File này CHỈ khai báo token. Override component nằm ở polaris-crm-theme.css
+   ════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Color · surface / background ───────────────────────────── */
+  --p-bg:                    #f1f1f1;  /* nền trang */
+  --p-bg-inverse:            #1a1a1a;
+  --p-surface:               #ffffff;
+  --p-surface-hover:         #f7f7f7;
+  --p-surface-active:        #f3f3f3;
+  --p-surface-secondary:     #f7f7f7;
+  --p-surface-tertiary:      #f3f3f3;
+  --p-surface-selected:      #f1f1f1;
+  --p-surface-brand:         #e3e3e3;
+
+  /* ── Color · fill (nút đặc / badge đặc) ─────────────────────── */
+  --p-fill-brand:            #303030;
+  --p-fill-brand-hover:      #1a1a1a;
+  --p-fill-brand-active:     #1a1a1a;
+  --p-fill-disabled:         rgba(0, 0, 0, .05);
+  --p-fill-secondary:        #f1f1f1;
+  --p-fill-success:          #047b5d;
+  --p-fill-critical:         #c70a24;
+  --p-fill-warning:          #ffb800;
+  --p-fill-caution:          #ffe600;
+  --p-fill-info:             #91d0ff;
+  --p-fill-emphasis:         #005bd3;
+  --p-fill-magic:            #8051ff;
+
+  /* ── Color · surface tint (nền nhạt banner / pill) ───────────── */
+  --p-surface-success:       #cdfed4;
+  --p-surface-critical:      #fee8eb;
+  --p-surface-warning:       #fff1e3;
+  --p-surface-caution:       #fff8db;
+  --p-surface-info:          #eaf4ff;
+  --p-surface-emphasis:      #f0f2ff;
+  --p-surface-magic:         #f8f7ff;
+
+  /* ── Color · text ───────────────────────────────────────────── */
+  --p-text:                  #303030;
+  --p-text-secondary:        #616161;
+  --p-text-disabled:         #b5b5b5;
+  --p-text-link:             #005bd3;
+  --p-text-brand:            #4a4a4a;
+  --p-text-on-fill:          #ffffff;
+  --p-text-inverse:          #e3e3e3;
+  --p-text-success:          #014b40;
+  --p-text-critical:         #8e0b21;
+  --p-text-warning:          #5e4200;
+  --p-text-caution:          #4f4700;
+  --p-text-info:             #003a5a;
+  --p-text-emphasis:         #005bd3;
+  --p-text-magic:            #5700d1;
+
+  /* ── Color · border ─────────────────────────────────────────── */
+  --p-border:                #e3e3e3;
+  --p-border-hover:          #cccccc;
+  --p-border-secondary:      #ebebeb;
+  --p-border-disabled:       #ebebeb;
+  --p-border-focus:          #005bd3;
+  --p-border-success:        #92fcac;
+  --p-border-critical:       #fec1c7;
+  --p-border-warning:        #ffc879;
+  --p-border-caution:        #ffeb78;
+  --p-border-info:           #a8d8ff;
+
+  /* ── Color · icon ───────────────────────────────────────────── */
+  --p-icon:                  #4a4a4a;
+  --p-icon-secondary:        #8a8a8a;
+  --p-icon-disabled:         #cccccc;
+  --p-icon-brand:            #1a1a1a;
+  --p-icon-success:          #047b5d;
+  --p-icon-critical:         #e22c38;
+  --p-icon-warning:          #b28400;
+  --p-icon-caution:          #998a00;
+  --p-icon-info:             #0094d5;
+  --p-icon-emphasis:         #005bd3;
+
+  /* ── Color · component-specific ─────────────────────────────── */
+  --p-input-surface:         #fdfdfd;
+  --p-input-border:          #8a8a8a;
+  --p-input-border-hover:    #616161;
+  --p-input-border-active:   #1a1a1a;
+  --p-nav-bg:                #ebebeb;
+  --p-nav-selected:          #fafafa;
+  --p-backdrop:              rgba(0, 0, 0, .71);
+  --p-avatar-fill:           #b5b5b5;
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  --p-font-sans: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont,
+                 'San Francisco', 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --p-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas,
+                 'Liberation Mono', Menlo, monospace;
+
+  /* Polaris dùng weight lệch chuẩn: 450/550/650/700 */
+  --p-fw-regular:  450;
+  --p-fw-medium:   550;
+  --p-fw-semibold: 650;
+  --p-fw-bold:     700;
+
+  --p-fs-275:  11px;
+  --p-fs-300:  12px;
+  --p-fs-325:  13px;
+  --p-fs-350:  14px;
+  --p-fs-400:  16px;
+  --p-fs-450:  18px;
+  --p-fs-500:  20px;
+  --p-fs-550:  22px;
+  --p-fs-600:  24px;
+  --p-fs-750:  30px;
+  --p-fs-800:  32px;
+  --p-fs-900:  36px;
+  --p-fs-1000: 40px;
+
+  --p-lh-300:  12px;
+  --p-lh-400:  16px;
+  --p-lh-500:  20px;
+  --p-lh-600:  24px;
+  --p-lh-700:  28px;
+  --p-lh-800:  32px;
+  --p-lh-1000: 40px;
+  --p-lh-1200: 48px;
+
+  --p-ls-densest: -.54px;
+  --p-ls-denser:  -.3px;
+  --p-ls-dense:   -.2px;
+  --p-ls-normal:  0;
+
+  /* ── Shape ──────────────────────────────────────────────────── */
+  --p-r-0:    0;
+  --p-r-050:  2px;
+  --p-r-100:  4px;
+  --p-r-150:  6px;
+  --p-r-200:  8px;   /* radius mặc định của Polaris */
+  --p-r-300:  12px;
+  --p-r-400:  16px;
+  --p-r-500:  20px;
+  --p-r-750:  30px;
+  --p-r-full: 9999px;
+
+  --p-bw-025: 1px;
+  --p-bw-050: 2px;
+
+  /* ── Space (rhythm 4px) ─────────────────────────────────────── */
+  --p-sp-050: 2px;
+  --p-sp-100: 4px;
+  --p-sp-150: 6px;
+  --p-sp-200: 8px;
+  --p-sp-300: 12px;
+  --p-sp-400: 16px;
+  --p-sp-500: 20px;
+  --p-sp-600: 24px;
+  --p-sp-800: 32px;
+  --p-sp-1000: 40px;
+  --p-sp-1200: 48px;
+  --p-sp-1600: 64px;
+
+  --p-sp-card-padding: 16px;
+  --p-sp-card-gap:     16px;
+  --p-sp-btn-gap:      8px;
+  --p-sp-cell-padding: 6px;
+
+  /* ── Shadow (Polaris ưu tiên viền 1px hơn shadow đậm) ───────── */
+  --p-sh-0:   none;
+  --p-sh-100: 0 1px 0 0 rgba(26, 26, 26, .07);
+  --p-sh-200: 0 3px 1px -1px rgba(26, 26, 26, .07);
+  --p-sh-300: 0 4px 6px -2px rgba(26, 26, 26, .20);
+  --p-sh-400: 0 8px 16px -4px rgba(26, 26, 26, .22);
+  --p-sh-500: 0 12px 20px -8px rgba(26, 26, 26, .24);
+  --p-sh-600: 0 20px 20px -8px rgba(26, 26, 26, .28);
+  --p-sh-inset-100: 0 1px 2px 0 rgba(26, 26, 26, .15) inset,
+                    0 1px 1px 0 rgba(26, 26, 26, .15) inset;
+  --p-sh-border-inset: 0 0 0 1px rgba(0, 0, 0, .08) inset;
+
+  /* Bevel đặc trưng của nút Polaris uplift */
+  --p-sh-button: 0 -1px 0 0 #b5b5b5 inset,
+                 0 0 0 1px rgba(0, 0, 0, .1) inset,
+                 0 .5px 0 1.5px #fff inset;
+  --p-sh-button-primary: 0 -1px 0 1px rgba(0, 0, 0, .8) inset,
+                         0 0 0 1px #303030 inset,
+                         0 .5px 0 1.5px rgba(255, 255, 255, .25) inset;
+  --p-sh-button-primary-inset: 0 3px 0 0 rgb(0, 0, 0) inset;
+
+  /* Focus ring Polaris */
+  --p-focus-ring: 0 0 0 2px var(--p-border-focus);
+}
