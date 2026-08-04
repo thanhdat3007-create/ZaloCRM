@@ -492,7 +492,7 @@ onMounted(async () => {
 
 <style scoped>
 .gb-page-wrapper {
-  min-height: calc(100vh - 60px);
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }

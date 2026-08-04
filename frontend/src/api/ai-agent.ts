@@ -366,6 +366,9 @@ export interface RocketProfileInfo {
   port: number | null;
   /** Có khoá API trong config.yaml không — thiếu khoá thì gateway trả 401. */
   hasKey: boolean;
+  /** Thư mục cài đặt chứa profile (`.rocketagent`, `.hermes`…). Backend quét cả hai bản
+   * cài nên cần nhãn này để phân biệt khi trùng tên. */
+  source?: string;
 }
 
 export interface RocketProfileListResult {

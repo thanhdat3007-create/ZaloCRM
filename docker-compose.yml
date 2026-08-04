@@ -36,9 +36,11 @@ services:
       # từ thư mục profile mount bên dưới, rồi gọi ngược ra host qua host.docker.internal
       # (127.0.0.1 trong container là chính container). Bỏ trống ROCKET_PROFILES_DIR trong
       # .env nếu không dùng Rocket — thiếu thư mục chỉ làm dropdown trống, app vẫn chạy.
+      # HAI thư mục: bản cài `~/.rocketagent` và bản cũ `~/.hermes` giữ profile RIÊNG,
+      # quét cả hai để không mất agent trong dropdown. Trùng tên → thư mục trước thắng.
       - ROCKET_AGENT_TRANSPORT=${ROCKET_AGENT_TRANSPORT:-http}
       - ROCKET_AGENT_HOST=${ROCKET_AGENT_HOST:-host.docker.internal}
-      - ROCKET_PROFILES_DIR=/rocket-profiles
+      - ROCKET_PROFILES_DIR=/rocket-profiles,/hermes-profiles
     # host.docker.internal có sẵn trên Docker Desktop (macOS/Windows); trên Linux phải khai
     # dòng này và api_server của Rocket phải bind ra IP bridge docker chứ không chỉ 127.0.0.1.
     extra_hosts:
@@ -58,6 +60,9 @@ services:
       # Không khai ROCKET_PROFILES_HOST_DIR → rơi về volume rỗng (giá trị không bắt đầu
       # bằng "/" được Docker hiểu là named volume), app vẫn chạy, dropdown chỉ trống.
       - ${ROCKET_PROFILES_HOST_DIR:-rocket_profiles_empty}:/rocket-profiles:ro
+      # Bản cài cũ `~/.hermes/profiles` — profile ở đây KHÔNG tự có trong ~/.rocketagent,
+      # mount thêm để dropdown thấy đủ cả hai. Bỏ trống nếu máy chỉ có một bản cài.
+      - ${HERMES_PROFILES_HOST_DIR:-hermes_profiles_empty}:/hermes-profiles:ro
     tmpfs:
       - /tmp
     security_opt:
@@ -239,3 +244,6 @@ volumes:
   clamav_data:
   # Chỗ trống thay cho thư mục profile Rocket khi không khai ROCKET_PROFILES_HOST_DIR.
   rocket_profiles_empty:
+  # Tương tự cho thư mục profile của bản cài cũ (~/.hermes) khi không khai
+  # HERMES_PROFILES_HOST_DIR.
+  hermes_profiles_empty:

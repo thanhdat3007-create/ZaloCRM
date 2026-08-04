@@ -3,10 +3,11 @@
 /**
  * rocket-profile.ts — danh sách profile Rocket cho dropdown trên UI.
  *
- * Nguồn dữ liệu là thư mục cấu hình của Rocket (rocket-profile-store.ts), KHÔNG phải
- * `hermes profile list`: backend chạy trong container không spawn được CLI của host, còn
- * thư mục thì mount read-only vào được. Đọc file còn biết thêm hai thứ CLI không nói:
- * profile nào thực sự bật `api_server`, và nó nằm ở cổng nào.
+ * Nguồn dữ liệu là các thư mục cấu hình của Rocket (rocket-profile-store.ts quét cả
+ * `~/.rocketagent/profiles` lẫn `~/.hermes/profiles`), KHÔNG phải `hermes profile list`:
+ * backend chạy trong container không spawn được CLI của host, còn thư mục thì mount
+ * read-only vào được. Đọc file còn biết thêm hai thứ CLI không nói: profile nào thực sự
+ * bật `api_server`, và nó nằm ở cổng nào.
  *
  * File này chỉ lo phần CÔNG KHAI cho UI — khoá API của từng profile ở lại trong store,
  * không bao giờ ra khỏi backend.
@@ -27,6 +28,8 @@ export interface RocketProfileInfo {
   port: number | null;
   /** Có khoá trong config.yaml không. Thiếu khoá thì gateway trả 401. */
   hasKey: boolean;
+  /** Thư mục cài đặt chứa profile (`.rocketagent`, `.hermes`…) — phân biệt hai bản cài. */
+  source: string;
 }
 
 export interface RocketProfileListResult {
@@ -57,6 +60,7 @@ export async function listRocketProfiles(refresh = false): Promise<RocketProfile
       apiServerEnabled: p.apiServerEnabled,
       port: p.port,
       hasKey: p.hasKey,
+      source: p.source,
     })),
   };
 }

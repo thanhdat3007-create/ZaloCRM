@@ -88,9 +88,36 @@ MODE="${1:-auto}"
 DBUSER="$(env_val DB_USER)"; DBUSER="${DBUSER:-crmuser}"
 DBNAME="$(env_val DB_NAME)"; DBNAME="${DBNAME:-zalocrm}"
 
+# ── Bổ sung biến mới khi update qua gói zip (không có git để tự đồng bộ) ───────
+# Khách cài qua CÁCH 4 chỉ có 4 file tĩnh, không git pull được. Khi nhận gói zip
+# bản mới có thêm biến trong .env.example, .env cũ của khách sẽ thiếu biến đó và
+# app không khởi động được. Hàm này chỉ THÊM key còn thiếu, KHÔNG đụng key đã có.
+SECRET_ENV_KEYS=(JWT_SECRET ENCRYPTION_KEY TOKEN_ENCRYPTION_KEY DB_PASSWORD S3_SECRET_KEY)
+is_secret_env_key() { local k="$1" s; for s in "${SECRET_ENV_KEYS[@]}"; do [ "$k" = "$s" ] && return 0; done; return 1; }
+
+merge_env_defaults() {
+  [ -f .env.example ] || return 0
+  local key val added=()
+  while IFS='=' read -r key val; do
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue   # bỏ comment/dòng trống
+    grep -qE "^$key=" .env && continue                      # đã có — giữ nguyên
+    if [ -z "$val" ] && is_secret_env_key "$key"; then
+      set_env "$key" "$(gen 32)"                            # biến bí mật mới → sinh ngẫu nhiên, không để trống
+    else
+      set_env "$key" "$val"
+    fi
+    added+=("$key")
+  done < .env.example
+  [ "${#added[@]}" -gt 0 ] && warn "Bản mới thêm biến: ${added[*]} — đã tự bổ sung vào .env."
+}
+
 # ── Sinh .env (cài mới) ───────────────────────────────────────────────────────
 ensure_env() {
-  [ -f .env ] && { ok ".env đã có — giữ nguyên (không ghi đè secret)."; return 0; }
+  if [ -f .env ]; then
+    ok ".env đã có — giữ nguyên secret hiện có."
+    merge_env_defaults
+    return 0
+  fi
   [ -f .env.example ] || die "Thiếu .env.example để tạo .env."
   log "Chưa có .env — tạo mới + sinh secret ngẫu nhiên…"
   cp .env.example .env

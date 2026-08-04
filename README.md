@@ -77,6 +77,8 @@ Kèm REST API tương đương và bộ **AgentKit** (skills + subagent) dùng n
 | Phần mềm | Docker + Docker Compose v2 | Docker 24+ |
 
 > Chạy đủ service (app, Postgres, Redis, MinIO) trên cùng một VPS thì nên có tối thiểu 4 GB RAM.
+>
+> Windows 10/11 (Docker Desktop + WSL2) và macOS 12+ (Docker Desktop, Intel hoặc Apple Silicon) chạy được để cài thử / dùng nội bộ.
 
 ## Cài đặt
 
@@ -93,6 +95,16 @@ curl -fsSL https://raw.githubusercontent.com/rocket-ai-global/rocket-zalo-crm/ma
 ```powershell
 irm https://raw.githubusercontent.com/rocket-ai-global/rocket-zalo-crm/main/scripts/install.ps1 | iex
 ```
+
+### macOS — cài Docker Desktop rồi 1 lệnh
+
+Cài [Docker Desktop](https://www.docker.com/products/docker-desktop/) (chọn đúng bản **Apple Silicon** hoặc **Intel**), mở app và đợi biểu tượng 🐳 trên thanh menu báo *running*, sau đó mở **Terminal**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rocket-ai-global/rocket-zalo-crm/main/scripts/install.sh | bash
+```
+
+Mã nguồn về `~/zcrm`, truy cập tại `http://localhost:3080`. Image multi-arch nên Apple Silicon chạy native, không cần Rosetta. Nhớ cấp cho Docker Desktop tối thiểu 4 GB RAM (🐳 → **Settings** → **Resources** → **Memory**). Chạy thật cho cả team thì vẫn nên dùng VPS Linux.
 
 ### Cài từ gói gửi tay (không cần mã nguồn)
 

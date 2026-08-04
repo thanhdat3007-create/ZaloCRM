@@ -90,8 +90,11 @@ hermes profile create tuvan-bds --clone-from default
 hermes profile create cskh-sau-ban --clone-from default
 ```
 
-Profile được nhận diện tự động bằng cách quét `~/.hermes/profiles/` — không phải khai báo
-thêm ở đâu cả.
+Profile được nhận diện tự động bằng cách quét **cả hai** thư mục cài đặt —
+`~/.rocketagent/profiles/` và `~/.hermes/profiles/` — không phải khai báo thêm ở đâu cả.
+Máy có cả hai bản cài thì dropdown gộp chung, và ô chọn ghi rõ profile đến từ thư mục nào.
+Trùng tên ở cả hai thì bản `~/.rocketagent` thắng (CRM báo tên bị bỏ qua ngay trong dòng
+trạng thái dưới ô chọn).
 
 ### 1.3 Tắt công cụ chạy lệnh cho profile CSKH
 
@@ -154,17 +157,26 @@ Trong `.env` ở thư mục gốc (docker compose đọc file này):
 ROCKET_AGENT_TRANSPORT=http
 # Thư mục profile Rocket trên MÁY HOST — compose mount read-only vào container.
 ROCKET_PROFILES_HOST_DIR=/home/<user>/.rocketagent/profiles
+# Bản cài cũ `hermes` giữ profile RIÊNG — khai thêm để dropdown thấy đủ cả hai.
+# Bỏ trống nếu máy chỉ có một bản cài.
+HERMES_PROFILES_HOST_DIR=/home/<user>/.hermes/profiles
 # Trong container 127.0.0.1 là chính container → phải trỏ ra host.
 ROCKET_AGENT_HOST=host.docker.internal
 ROCKET_AGENT_TIMEOUT_MS=90000
 ```
 
-CRM đọc `config.yaml` của từng profile trong thư mục đó để lấy **cổng + khoá riêng** của
+CRM đọc `config.yaml` của từng profile trong các thư mục đó để lấy **cổng + khoá riêng** của
 profile, rồi ghép với `ROCKET_AGENT_HOST` thành địa chỉ gọi. Nhờ vậy thêm profile mới không
 phải sửa `.env`, và ô chọn profile hiện luôn cổng + trạng thái gateway của từng cái.
 
-Backend chạy **trực tiếp trên host** (không Docker) thì bỏ `ROCKET_PROFILES_HOST_DIR`, đặt
-`ROCKET_AGENT_HOST=127.0.0.1`; CRM tự đọc `~/.rocketagent/profiles` của user đang chạy.
+Thiếu một trong hai thư mục **không** làm mất profile của thư mục còn lại — máy chỉ cài một
+bản là chuyện bình thường, không phải lỗi cấu hình.
+
+Backend chạy **trực tiếp trên host** (không Docker) thì bỏ cả hai biến `*_PROFILES_HOST_DIR`,
+đặt `ROCKET_AGENT_HOST=127.0.0.1`; CRM tự đọc `~/.rocketagent/profiles` và
+`~/.hermes/profiles` của user đang chạy. Muốn quét thư mục khác thì khai
+`ROCKET_PROFILES_DIR` — danh sách đường dẫn ngăn cách bởi dấu phẩy, thư mục đứng trước
+được ưu tiên khi trùng tên profile.
 
 ⚠️ Mount thư mục profile nghĩa là container đọc được khoá của **mọi** profile trong đó (kể
 cả `.env` chứa khoá nhà cung cấp LLM). Chỉ làm khi Rocket và CRM cùng một chủ sở hữu.
@@ -249,7 +261,9 @@ Bấm **Kiểm tra kết nối** trong màn hình agent trước, rồi tra bả
 
 | Hiện tượng | Nguyên nhân | Xử lý |
 |---|---|---|
-| Ô chọn profile trống, báo "Không thấy thư mục profile Rocket" | Chưa mount thư mục profile vào container | Đặt `ROCKET_PROFILES_HOST_DIR` trong `.env` rồi `docker compose up -d app` |
+| Ô chọn profile trống, báo "Không đọc được thư mục profile Rocket nào" | Chưa mount thư mục profile vào container | Đặt `ROCKET_PROFILES_HOST_DIR` trong `.env` rồi `docker compose up -d app` |
+| Thiếu profile của bản cài `hermes` trong ô chọn | Chỉ mount `~/.rocketagent/profiles` | Đặt thêm `HERMES_PROFILES_HOST_DIR=/home/<user>/.hermes/profiles` rồi `docker compose up -d app` |
+| Báo "Bỏ qua vì trùng tên với thư mục quét trước" | Cùng một tên profile có ở cả hai thư mục cài đặt | Bình thường — CRM dùng bản `~/.rocketagent`. Muốn dùng bản kia thì đổi tên nó cho khác |
 | Profile hiện chữ **"CHƯA bật cổng API"** | Profile có thật nhưng `config.yaml` không khai `api_server` — `hermes profile create` không tự thêm | Thêm khối `api_server` (mục 1.1) với cổng riêng, rồi `hermes gateway restart` |
 | Profile hiện **"gateway đang tắt"** | Gateway của profile đó chưa chạy | `hermes gateway start` |
 | Profile hiện **"thiếu khoá"** | `api_server.extra.key` để trống — Rocket từ chối mở cổng thiếu khoá | Sinh khoá `openssl rand -hex 32`, điền vào `config.yaml`, restart gateway |

@@ -52,10 +52,16 @@ function isActive(to: string): boolean {
 </script>
 
 <style scoped>
-.ce-marketing-shell { display: flex; height: 100%; min-height: 0; }
+.ce-marketing-shell {
+  display: flex;
+  height: calc(100vh - var(--smax-topnav-h, 52px));
+  height: calc(100dvh - var(--smax-topnav-h, 52px));
+  min-height: 0;
+}
 .ce-mkt-sidebar {
   flex: 0 0 220px; border-right: 1px solid var(--border, #e5e4e7);
   background: #fbfbfc; display: flex; flex-direction: column; padding: 12px 8px;
+  overflow-y: auto;
 }
 .ce-mkt-header {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px 12px;
@@ -68,10 +74,10 @@ function isActive(to: string): boolean {
 }
 .ce-mkt-link:hover { background: rgba(15, 111, 160, 0.08); }
 .ce-mkt-link.is-active { background: rgba(15, 111, 160, 0.14); color: var(--shell, #0e445a); font-weight: 600; }
-.ce-mkt-content { flex: 1 1 auto; min-width: 0; overflow: auto; }
+.ce-mkt-content { flex: 1 1 auto; min-width: 0; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
 
 @media (max-width: 768px) {
-  .ce-marketing-shell { flex-direction: column; }
+  .ce-marketing-shell { flex-direction: column; height: auto; min-height: calc(100vh - var(--smax-topnav-h, 52px)); }
   .ce-mkt-sidebar { flex: 0 0 auto; border-right: none; border-bottom: 1px solid var(--border, #e5e4e7); }
   .ce-mkt-nav { flex-direction: row; overflow-x: auto; }
 }

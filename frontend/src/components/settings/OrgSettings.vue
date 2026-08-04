@@ -11,6 +11,7 @@
         label="Tên tổ chức"
         :disabled="!authStore.isOwner || saving"
         variant="outlined"
+        hide-details
         class="mb-3"
       />
 
@@ -22,16 +23,17 @@
         label="Múi giờ hệ thống"
         :disabled="!authStore.isOwner || saving"
         variant="outlined"
-        class="mb-1"
-        hint="Mọi thời điểm hiển thị, log, debug và quy đổi tham số đều dùng múi giờ này. Mặc định +07:00 (Việt Nam) — để dễ đọc và đồng nhất bug report."
-        persistent-hint
+        hide-details
       />
+      <div class="text-caption text-medium-emphasis mt-1 mb-3 px-1">
+        Mọi thời điểm hiển thị, log, debug và quy đổi tham số đều dùng múi giờ này. Mặc định +07:00 (Việt Nam) — để dễ đọc và đồng nhất bug report.
+      </div>
 
       <v-alert
         type="info"
         variant="tonal"
         density="compact"
-        class="mt-3 mb-3"
+        class="mb-4"
         icon="mdi-clock-outline"
       >
         Bây giờ tại tổ chức: <strong>{{ previewNow }}</strong>
@@ -98,10 +100,11 @@
         placeholder="tenmien.com"
         :disabled="!authStore.isOwner || saving"
         variant="outlined"
-        class="mb-3"
-        hint="Dùng gợi ý ô đăng nhập: user@<tên miền> hoặc 0901 234 567. Để trống nếu không cần."
-        persistent-hint
+        hide-details
       />
+      <div class="text-caption text-medium-emphasis mt-1 mb-4 px-1">
+        Dùng gợi ý ô đăng nhập: user@&lt;tên miền&gt; hoặc 0901 234 567. Để trống nếu không cần.
+      </div>
 
       <v-alert v-if="error" type="error" density="compact" class="mb-3">{{ error }}</v-alert>
       <v-alert v-if="saved" type="success" density="compact" class="mb-3">Đã lưu thành công</v-alert>

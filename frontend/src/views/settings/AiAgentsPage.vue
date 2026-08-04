@@ -506,7 +506,7 @@ const runFilterFallbackOnly = ref(false);
 const rocketProbing = ref(false);
 const rocketProbeResult = ref<RocketProbeResult | null>(null);
 
-// Danh sách profile Rocket cho dropdown (backend đọc bằng `hermes profile list`).
+// Danh sách profile Rocket cho dropdown (backend quét cả ~/.rocketagent lẫn ~/.hermes).
 const rocketProfiles = ref<RocketProfileInfo[]>([]);
 const rocketProfilesLoading = ref(false);
 const rocketProfilesError = ref('');
@@ -526,8 +526,17 @@ const rocketProfileOptions = computed<RocketProfileInfo[]>(() => {
   ];
 });
 
+/**
+ * Chỉ chú thích thư mục nguồn khi danh sách thực sự đến từ nhiều bản cài — máy chỉ có
+ * `~/.rocketagent` thì thêm "· .rocketagent" vào mọi dòng là nhiễu thuần tuý.
+ */
+const showRocketProfileSource = computed(
+  () => new Set(rocketProfiles.value.map((p) => p.source).filter(Boolean)).size > 1,
+);
+
 function rocketProfileLabel(p: RocketProfileInfo): string {
   const parts = [p.name];
+  if (showRocketProfileSource.value && p.source) parts.push(p.source);
   if (p.model) parts.push(p.model);
   // Ba trạng thái khiến agent im lặng dù profile "có tồn tại" — phải thấy ngay lúc chọn,
   // đừng để phát hiện qua tin nhắn khách không được trả lời.

@@ -5,7 +5,7 @@
  * All environment variables are read once at startup and typed here.
  */
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { delimiter, join } from 'node:path';
 
 // SECURITY FIX (A2): JWT_SECRET and ENCRYPTION_KEY must NOT fall back to dev
 // defaults when NODE_ENV=production. Webhook signature forgery / token forgery
@@ -24,6 +24,29 @@ export function envValue(name: string): string | undefined {
   if (quote === '"' || quote === "'") return trimmed;
   const commentAt = trimmed.search(/\s+#/);
   return (commentAt >= 0 ? trimmed.slice(0, commentAt) : trimmed).trim();
+}
+
+/**
+ * Thư mục profile của Rocket — NHIỀU thư mục, không phải một.
+ *
+ * Cùng một máy thường có cả bản cài cũ (`~/.hermes`) lẫn bản đổi tên (`~/.rocketagent`),
+ * mỗi bản giữ profile riêng. Quét cả hai để admin không phải copy thư mục qua lại chỉ để
+ * thấy agent trong dropdown.
+ *
+ * `ROCKET_PROFILES_DIR` nhận danh sách ngăn cách bởi dấu phẩy hoặc `path.delimiter`
+ * (`:` trên POSIX, `;` trên Windows) — khai một đường dẫn duy nhất vẫn chạy như cũ.
+ * Thứ tự có ý nghĩa: profile trùng tên ở nhiều thư mục thì thư mục ĐỨNG TRƯỚC thắng.
+ */
+function rocketProfileDirsFromEnv(raw: string | undefined): string[] {
+  const listed = (raw ?? '')
+    .split(',')
+    .flatMap((part) => part.split(delimiter))
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const dirs = listed.length
+    ? listed
+    : [join(homedir(), '.rocketagent', 'profiles'), join(homedir(), '.hermes', 'profiles')];
+  return [...new Set(dirs)];
 }
 
 function requireSecret(name: string, devFallback: string, value: string | undefined): string {
@@ -132,10 +155,11 @@ export const config = {
    * không phải tài khoản của org (xem kiến trúc mục 5.3). */
   rocketAgentBaseUrl: envValue('ROCKET_AGENT_BASE_URL') || 'http://127.0.0.1:8642',
   rocketAgentApiKey: envValue('ROCKET_AGENT_API_KEY') || '',
-  /** Thư mục profile của Rocket. Backend chạy trong Docker thì mount thư mục
-   * ~/.rocketagent/profiles của host vào container rồi trỏ biến này vào chỗ mount. */
-  rocketProfilesDir:
-    envValue('ROCKET_PROFILES_DIR') || join(homedir(), '.rocketagent', 'profiles'),
+  /** Các thư mục profile của Rocket, quét theo thứ tự (trùng tên → thư mục trước thắng).
+   * Mặc định gồm CẢ `~/.rocketagent/profiles` lẫn `~/.hermes/profiles` vì hai bản cài giữ
+   * profile riêng. Backend chạy trong Docker thì mount các thư mục đó của host vào
+   * container rồi liệt kê chỗ mount ở đây, ngăn cách bởi dấu phẩy. */
+  rocketProfileDirs: rocketProfileDirsFromEnv(envValue('ROCKET_PROFILES_DIR')),
   /** Host dùng khi dựng URL từ cổng đọc được trong config.yaml. config.yaml luôn ghi
    * 127.0.0.1 (host Rocket *bind*), nhưng trong container 127.0.0.1 là chính container →
    * đặt `host.docker.internal` để gọi ngược ra máy host. */

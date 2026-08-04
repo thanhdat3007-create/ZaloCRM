@@ -1,64 +1,78 @@
 # 🚀 Hướng Dẫn Cài Đặt Rocket Zalo CRM (Siêu Tốc & Đơn Giản)
 
-> 💡 Ứng dụng đã được đóng gói sẵn thành Docker Image trên Cloud Registry. Bạn **không cần** cài môi trường lập trình, **không cần** biên dịch mã nguồn, và **không phải tự tay sửa file cấu hình nào** — mọi mật khẩu và khoá bảo mật đều được sinh tự động.
+> 💡 Ứng dụng đã được đóng gói sẵn thành Docker Image trên Cloud Registry. Bạn **không cần** mã nguồn, **không cần** biên dịch, và **không phải tự tay sửa file cấu hình nào** — mọi mật khẩu và khoá bảo mật đều được sinh tự động.
 
-Chọn đúng 1 trong 3 cách bên dưới:
-
-| Bạn có gì trong tay | Dùng cách nào |
-|---|---|
-| Máy chủ Linux/VPS + quyền truy cập mã nguồn | **CÁCH 1** — 1 lệnh duy nhất |
-| Máy Windows | **CÁCH 2** — 1 lệnh PowerShell |
-| Chỉ có file nén chúng tôi gửi (không có mã nguồn) | **CÁCH 3** — giải nén rồi chạy 1 lệnh |
+Cài đặt qua **gói cài đặt (.zip)** chúng tôi gửi — không cần git, không cần quyền truy cập mã nguồn. Gói chỉ khoảng 20KB vì toàn bộ ứng dụng nằm trong Docker Image trên Cloud, gói chỉ chứa `docker-compose.yml`, `.env.example` và script triển khai.
 
 ---
 
-## ⚡ CÁCH 1: Linux / VPS — 1 lệnh duy nhất
+## Bước 0 — Cài Docker
 
-Đăng nhập VPS/máy chủ Linux (Ubuntu, Debian, CentOS...) qua SSH và dán duy nhất 1 lệnh:
+Chọn đúng hệ điều hành của máy sẽ chạy CRM:
+
+### Linux (Ubuntu/Debian/CentOS…)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rocket-ai-global/rocket-zalo-crm/main/scripts/install.sh | bash
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER   # rồi đăng xuất/đăng nhập lại để chạy docker không cần sudo
 ```
 
-### Script tự động làm toàn bộ công việc:
-1. ✨ Cài Docker & Docker Compose (nếu VPS chưa có).
-2. 🔑 **Tự sinh file `.env`** cùng toàn bộ khoá bảo mật ngẫu nhiên (`JWT_SECRET`, `ENCRYPTION_KEY`, `TOKEN_ENCRYPTION_KEY`, `DB_PASSWORD`, mật khẩu MinIO) — bạn không phải nghĩ hay gõ gì.
-3. 🔌 **Tự né port đang bận** — nếu 3080 đã có ứng dụng khác chiếm, script tự nhảy sang 3081 và ghi lại vào `.env`.
-4. ⚡ Kéo Docker Image dựng sẵn từ Cloud (không mất thời gian biên dịch).
-5. 🗄️ Khởi chạy Postgres, Redis, MinIO rồi chạy Database Migration.
-6. 🌐 In ra đường dẫn truy cập ứng dụng.
+### Windows
 
-👉 Chạy xong, mở trình duyệt vào đường dẫn script in ra (mặc định **`http://IP-VPS:3080`**).
+Cài **Docker Desktop** (bật WSL2 backend lúc cài) từ **https://www.docker.com/products/docker-desktop/**. Chạy các lệnh ở Bước 2 trong **Git Bash** hoặc **WSL2 Ubuntu** (script cần shell bash).
 
----
+### macOS (Intel & Apple Silicon M1/M2/M3/M4)
 
-## 💻 CÁCH 2: Windows (PowerShell — 1 lệnh duy nhất)
+Docker Desktop **không tự cài được** trên Mac, bạn phải cài tay trước:
 
-Mở **PowerShell** (Run as Administrator) và dán:
+- Tải tại **https://www.docker.com/products/docker-desktop/** → chọn đúng bản:
+  - **Apple Silicon** (Mac đời 2020 trở lên, chip M1/M2/M3/M4)
+  - **Intel Chip** (Mac đời cũ)
+  - *Không rõ máy nào?* Bấm  → **About This Mac** → dòng **Chip** / **Processor**.
+- Mở file `.dmg` vừa tải → kéo **Docker** vào thư mục **Applications**.
+- Mở **Docker** từ Launchpad → bấm **Accept** điều khoản → chờ **biểu tượng con cá voi 🐳** trên thanh menu (góc trên bên phải) hiện chữ **Docker Desktop is running**.
 
-```powershell
-irm https://raw.githubusercontent.com/rocket-ai-global/rocket-zalo-crm/main/scripts/install.ps1 | iex
-```
+> 🧠 **Cấp đủ RAM cho Docker:** vào 🐳 → **Settings** → **Resources** → kéo **Memory** lên tối thiểu **4 GB** (khuyến nghị 6–8 GB) → **Apply & Restart**. Thiếu RAM thì Postgres/MinIO dễ bị tắt giữa chừng.
 
----
-
-## 📦 CÁCH 3: Cài từ gói gửi tay (không cần mã nguồn)
-
-Dùng khi bạn nhận được file nén `rocket-zalo-crm-<phiên-bản>.zip` từ chúng tôi. Gói chỉ khoảng 20KB vì toàn bộ ứng dụng nằm trong Docker Image trên Cloud.
-
-**Yêu cầu:** máy đã có Docker (Linux/macOS: Docker Engine; Windows: Docker Desktop + WSL2).
+*Thay thế (dành cho ai quen dùng Homebrew):*
 
 ```bash
-# 1. Giải nén rồi mở terminal trong thư mục vừa giải nén
+brew install --cask docker && open -a Docker
+```
+
+> 💡 macOS dùng cho **cài thử / dùng nội bộ trên máy cá nhân**. Chạy thật cho cả team, phục vụ nhiều nhân viên 24/7 thì nên cài trên **VPS Linux** để máy không phải bật liên tục.
+
+---
+
+## Bước 1 — Giải nén gói cài đặt
+
+Nhận file nén `rocket-zalo-crm-<phiên-bản>.zip` từ chúng tôi, giải nén rồi mở terminal trong thư mục vừa giải nén:
+
+```bash
 cd rocket-zalo-crm
+```
 
-# 2. Chạy đúng 1 lệnh này
+## Bước 2 — Chạy đúng 1 lệnh
+
+```bash
 bash scripts/zalocrm-deploy.sh
 ```
 
-Xong. Script tự sinh `.env` + khoá bảo mật, tự né port trùng, kéo image, chạy migration rồi in ra link truy cập. **Bạn không cần mở hay sửa bất kỳ file cấu hình nào.**
+Xong. Script tự sinh `.env` + khoá bảo mật ngẫu nhiên (`JWT_SECRET`, `ENCRYPTION_KEY`, `TOKEN_ENCRYPTION_KEY`, `DB_PASSWORD`, mật khẩu MinIO), tự né port đang bận, kéo Docker Image dựng sẵn, chạy Postgres/Redis/MinIO, chạy Database Migration rồi in ra link truy cập. **Bạn không cần mở hay sửa bất kỳ file cấu hình nào.**
 
-> ⚠️ Nếu gặp lỗi `denied` khi kéo image: máy bạn chưa có quyền tải image. Liên hệ chúng tôi để được cấp quyền, hoặc đăng nhập bằng `docker login ghcr.io`.
+👉 Chạy xong, mở trình duyệt vào đường dẫn script in ra (mặc định **`http://localhost:3080`**, trên VPS thì **`http://IP-VPS:3080`**).
+
+> ⚠️ Nếu gặp lỗi `denied` khi kéo image: máy bạn chưa có quyền tải image (image ở chế độ private). Liên hệ chúng tôi để được cấp một token chỉ-đọc, rồi `docker login ghcr.io -u <user> -p <token>` trước khi chạy lại lệnh trên.
+
+### Lỗi hay gặp
+
+| Thông báo lỗi | Cách xử lý |
+|---|---|
+| `Cannot connect to the Docker daemon` | Docker chưa chạy → mở Docker Desktop (Windows/Mac) hoặc `sudo systemctl start docker` (Linux), rồi chạy lại lệnh. |
+| `command not found: docker` | Chưa cài xong Docker (làm lại Bước 0), hoặc cài rồi thì mở **terminal mới**. |
+| Cài xong nhưng không vào được `localhost:3080` | Chờ thêm 1–2 phút cho migration xong, kiểm tra bằng `docker compose ps` (cột STATUS phải là `Up`/`healthy`). |
+| Port 3080 bị chiếm | Script tự nhảy sang 3081 và in ra link đúng — cứ dùng link đó. |
+| `denied` khi kéo image | Máy chưa có quyền tải image → `docker login ghcr.io` bằng token chúng tôi cấp, hoặc liên hệ chúng tôi. |
 
 ---
 
@@ -79,16 +93,30 @@ Xong. Script tự sinh `.env` + khoá bảo mật, tự né port trùng, kéo im
 
 ## 🔄 Cập nhật phiên bản mới nhất (Upgrade)
 
-Chạy lại đúng lệnh đã dùng lúc cài:
+Vì gói cài đặt không có git, có 2 trường hợp:
+
+### A. Bản vá không đổi cấu hình (đa số các bản)
+
+Chạy lại đúng lệnh đã dùng lúc cài, ngay trong thư mục cũ:
 
 ```bash
 cd rocket-zalo-crm
-./scripts/zalocrm-deploy.sh
+bash scripts/zalocrm-deploy.sh
 ```
 
-Script tự nhận biết đây là **nâng cấp** (không phải cài mới), **backup database trước**, kéo image mới rồi áp migration. File `.env` đang có được **giữ nguyên** — secret và port của bạn không bị ghi đè.
+Nếu gói cũ có ghim phiên bản (`ZCRM_TAG` trong `.env`), sửa dòng đó thành phiên bản mới (hoặc xoá dòng để tự dùng bản mới nhất) trước khi chạy — nếu không script sẽ pull đúng bản cũ đã ghim.
 
-> 🛡️ **Dữ liệu an toàn:** quy trình nâng cấp không bao giờ xoá volume dữ liệu. Nếu backup thất bại, script dừng lại chứ không nâng cấp tiếp.
+### B. Bản mới đổi `docker-compose.yml` / thêm biến cấu hình mới
+
+Chúng tôi gửi gói zip mới. Giải nén **đè lên thư mục cũ** (không đụng `.env` đang chạy vì file này không nằm trong gói), rồi chạy lại:
+
+```bash
+bash scripts/zalocrm-deploy.sh
+```
+
+Script tự nhận biết đây là **nâng cấp** (không phải cài mới), **backup database trước**, tự bổ sung biến cấu hình mới còn thiếu vào `.env` (không ghi đè biến đã có), kéo image mới rồi áp migration.
+
+> 🛡️ **Dữ liệu an toàn:** quy trình nâng cấp không bao giờ xoá volume dữ liệu (`down -v` không được dùng ở đâu trong script). Nếu backup thất bại, script dừng lại chứ không nâng cấp tiếp. Cả 2 trường hợp trên đều giữ nguyên `.env` và toàn bộ dữ liệu — chỉ thêm biến còn thiếu, không sửa/xoá biến đã có.
 
 ---
 
@@ -111,9 +139,9 @@ docker exec zalo-crm-db pg_dump -U crmuser zalocrm > backup-zalocrm.sql
 
 ---
 
-## 🛠️ Dành cho Dev: build image từ mã nguồn
+## 🛠️ Dành cho Dev (nội bộ, có quyền truy cập mã nguồn)
 
-Mặc định hệ thống kéo image dựng sẵn cho nhanh. Khi bạn sửa mã nguồn và muốn chạy bản của mình:
+Mặc định gói khách hàng kéo image dựng sẵn cho nhanh. Khi có quyền truy cập repo mã nguồn và muốn build bản của mình:
 
 ```bash
 ZCRM_BUILD=1 ./scripts/zalocrm-deploy.sh
@@ -130,3 +158,5 @@ Muốn ghim một phiên bản image cụ thể thay vì `latest`, đặt `ZCRM_
 ```bash
 ZCRM_TAG=3.4.1
 ```
+
+`scripts/install.sh` / `scripts/install.ps1` (clone/pull qua git) vẫn dùng được cho môi trường nội bộ có quyền truy cập repo (staging, máy dev) — không dùng cho khách hàng vì repo mã nguồn ở chế độ private.
