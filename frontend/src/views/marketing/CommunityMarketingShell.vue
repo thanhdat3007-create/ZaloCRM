@@ -44,6 +44,7 @@ const navItems = [
   { to: '/marketing/message-templates', label: 'Mẫu tin', icon: 'mdi-message-text-outline' },
   { to: '/marketing/lists', label: 'Tệp khách hàng', icon: 'mdi-format-list-bulleted' },
   { to: '/marketing/list-broadcasts', label: 'Nhắn tệp hàng loạt', icon: 'mdi-send-outline' },
+  { to: '/marketing/birthday', label: 'Chúc sinh nhật', icon: 'mdi-cake-variant-outline' },
 ];
 
 function isActive(to: string): boolean {

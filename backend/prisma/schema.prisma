@@ -188,6 +188,9 @@ model Organization {
   listBroadcasts           ListBroadcast[]
   listBroadcastRuns        ListBroadcastRun[]
   listBroadcastRecipients  ListBroadcastRecipient[]
+  // Phase Chúc sinh nhật 2026-08-06 — cấu hình + nhật ký lời chúc đã gửi.
+  birthdayGreetingConfig  BirthdayGreetingConfig?
+  birthdayGreetings       BirthdayGreeting[]
   // 2026-08-03 — AI agent chăm sóc khách hàng tự động.
   aiAgents                    AiAgent[]
   aiAgentDocuments            AiAgentDocument[]
@@ -331,6 +334,8 @@ model User {
   groupBroadcastsCreated    GroupBroadcast[]             @relation("GroupBroadcastCreatedBy")
   // Phase Gửi tệp khách hàng 2026-08-04 — người tạo chiến dịch nhắn tệp.
   listBroadcastsCreated     ListBroadcast[]              @relation("ListBroadcastCreatedBy")
+  // Phase Chúc sinh nhật 2026-08-06 — người bật/chỉnh cấu hình gần nhất.
+  birthdayConfigsCreated    BirthdayGreetingConfig[]     @relation("BirthdayConfigCreatedBy")
 
   @@map("users")
 }
@@ -662,6 +667,8 @@ model Contact {
   // bảng này thay vì chỉ assignedUserId.
   contactAccess     ContactAccess[]
   contactNotes      Note[]
+  // Chúc sinh nhật 2026-08-06 — nhật ký lời chúc đã lên lịch / đã gửi cho KH này.
+  birthdayGreetings BirthdayGreeting[]
   // Phase 7 — Automation framework
   // automationTasks   AutomationTask[]  ← REMOVED 2026-06-01 Luồng Mục Tiêu M0
   // Phase Lead Pool 2026-05-24
@@ -1670,6 +1677,10 @@ model MessageTemplate {
   createdBy User?                  @relation("MessageTemplateCreatedBy", fields: [createdById], references: [id])
   groupBroadcasts GroupBroadcast[]
   listBroadcasts  ListBroadcast[]
+  // Chúc sinh nhật 2026-08-06 — 3 dịp gửi, mỗi dịp một mẫu tin riêng.
+  birthdayBeforeConfigs BirthdayGreetingConfig[] @relation("BirthdayBeforeTemplate")
+  birthdayOnDayConfigs  BirthdayGreetingConfig[] @relation("BirthdayOnDayTemplate")
+  birthdayAfterConfigs  BirthdayGreetingConfig[] @relation("BirthdayAfterTemplate")
 
   @@index([orgId, ownerUserId])
   @@index([orgId, category])
@@ -4566,4 +4577,115 @@ model AiAgentRun {
   @@index([orgId, agentId, status, createdAt])
   @@index([conversationId, createdAt])
   @@map("ai_agent_runs")
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Lời chúc sinh nhật tự động (🟢 Community)
+// ════════════════════════════════════════════════════════════════════════════
+// Mỗi org 1 cấu hình, tối đa 3 dịp gửi quanh ngày sinh: TRƯỚC N ngày / ĐÚNG
+// ngày / SAU N ngày. Mỗi dịp có mẫu tin riêng vì lời lẽ khác hẳn nhau
+// ("sắp sinh nhật" ≠ "chúc mừng sinh nhật" ≠ "chúc mừng muộn").
+//
+// Vì sao tách bảng BirthdayGreeting thay vì gửi thẳng trong cron: cần một khoá
+// chống trùng bền vững qua restart/nhiều instance. `@@unique([contactId,
+// occasion, birthdayOn])` bảo đảm mỗi khách chỉ nhận 1 tin / 1 dịp / 1 năm,
+// kể cả khi cron chạy lại hay admin đổi cấu hình giữa ngày.
+
+/// Cấu hình lời chúc sinh nhật — 1 bản ghi / org.
+model BirthdayGreetingConfig {
+  id      String  @id @default(uuid())
+  orgId   String  @unique @map("org_id")
+  enabled Boolean @default(false)
+
+  /// Múi giờ dùng để xác định "hôm nay" và giờ gửi.
+  timezone String @default("Asia/Ho_Chi_Minh")
+  /// Giờ gửi trong ngày, 'HH:mm' giờ tường tại `timezone`.
+  sendTime String @default("09:00") @map("send_time")
+  /// Trễ quá bấy nhiêu phút so với `sendTime` thì BỎ dịp đó thay vì gửi bù.
+  /// Chống trường hợp backend chết cả ngày rồi 3h sáng hôm sau bắn một loạt tin.
+  lateToleranceMinutes Int @default(180) @map("late_tolerance_minutes")
+
+  // ── 3 dịp gửi ──
+  beforeEnabled    Boolean @default(false) @map("before_enabled")
+  /// Gửi trước ngày sinh bấy nhiêu ngày (1-30).
+  beforeDays       Int     @default(3) @map("before_days")
+  beforeTemplateId String? @map("before_template_id")
+
+  onDayEnabled    Boolean @default(true) @map("on_day_enabled")
+  onDayTemplateId String? @map("on_day_template_id")
+
+  afterEnabled    Boolean @default(false) @map("after_enabled")
+  /// Gửi sau ngày sinh bấy nhiêu ngày (1-30).
+  afterDays       Int     @default(1) @map("after_days")
+  afterTemplateId String? @map("after_template_id")
+
+  // ── Nick gửi ──
+  /// 'assigned' = nick đang có hội thoại 1-1 gần nhất với khách (tin đến từ người
+  /// khách vẫn nhắn — tự nhiên nhất cho lời chúc). 'pool' = luân phiên
+  /// `zaloAccountIds`. Chế độ 'assigned' vẫn rơi về pool khi khách chưa có hội thoại.
+  senderMode     String   @default("assigned") @map("sender_mode")
+  zaloAccountIds String[] @default([]) @map("zalo_account_ids")
+
+  // ── Hạn mức & nhịp gửi (dùng lại ngưỡng an toàn của gửi tệp) ──
+  dailyQuota        Int @default(200) @map("daily_quota")
+  perNickDailyQuota Int @default(40) @map("per_nick_daily_quota")
+  minDelaySec       Int @default(30) @map("min_delay_sec")
+  maxDelaySec       Int @default(90) @map("max_delay_sec")
+
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  org            Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy      User?              @relation("BirthdayConfigCreatedBy", fields: [createdById], references: [id])
+  beforeTemplate MessageTemplate?   @relation("BirthdayBeforeTemplate", fields: [beforeTemplateId], references: [id], onDelete: SetNull)
+  onDayTemplate  MessageTemplate?   @relation("BirthdayOnDayTemplate", fields: [onDayTemplateId], references: [id], onDelete: SetNull)
+  afterTemplate  MessageTemplate?   @relation("BirthdayAfterTemplate", fields: [afterTemplateId], references: [id], onDelete: SetNull)
+  greetings      BirthdayGreeting[]
+
+  @@map("birthday_greeting_configs")
+}
+
+/// Một lượt chúc: 1 khách × 1 dịp × 1 năm. Cron lập kế hoạch tạo bản ghi
+/// `pending` kèm `dueAt`, cron gửi nhặt bản ghi đã tới hạn.
+model BirthdayGreeting {
+  id        String @id @default(uuid())
+  orgId     String @map("org_id")
+  configId  String @map("config_id")
+  contactId String @map("contact_id")
+
+  /// 'before' | 'on_day' | 'after'
+  occasion   String
+  /// Ngày sinh nhật CỦA NĂM chứa dịp này (không phải ngày gửi). Cùng với
+  /// `occasion` tạo khoá chống trùng theo năm.
+  birthdayOn DateTime @map("birthday_on") @db.Date
+  /// Thời điểm tới hạn gửi (UTC) = ngày gửi + `sendTime` quy đổi từ `timezone`.
+  dueAt      DateTime @map("due_at")
+
+  state    String @default("pending") // pending|sent|failed|skipped
+  attempts Int    @default(0)
+
+  zaloAccountId String?   @map("zalo_account_id")
+  zaloUidUsed   String?   @map("zalo_uid_used")
+  zaloMsgIds    String[]  @default([]) @map("zalo_msg_ids")
+  sentAt        DateTime? @map("sent_at")
+  /// 'TOO_LATE' | 'NO_TEMPLATE' | 'TEMPLATE_EMPTY' | 'NO_USABLE_NICK'
+  /// | 'UID_NOT_FOUND' | 'CONFIG_DISABLED' | 'OCCASION_DISABLED' + mã lỗi gửi.
+  errorCode     String?   @map("error_code")
+  errorMessage  String?   @map("error_message")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  org     Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  config  BirthdayGreetingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  contact Contact                @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, occasion, birthdayOn])
+  /// Cron gửi: lấy bản ghi tới hạn của mọi org trong 1 truy vấn.
+  @@index([state, dueAt])
+  @@index([orgId, state, dueAt])
+  /// Đếm hạn mức ngày theo nick (nick còn phục vụ chiến dịch khác).
+  @@index([zaloAccountId, sentAt])
+  @@map("birthday_greetings")
 }

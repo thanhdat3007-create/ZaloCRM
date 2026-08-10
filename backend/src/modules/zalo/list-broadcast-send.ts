@@ -29,6 +29,7 @@ import { resolveOrCreateUserConversation } from '../chat/conversation-resolver.j
 import {
   GroupSendError, intraThreadDelay, sendMediaItem, type PreparedMedia,
 } from './group-broadcast-send.js';
+import { buildRtfContent, trimRich, type ZaloStyle } from '../../shared/zalo-rich-text.js';
 
 /** threadType của Zalo: 0 = 1-1. */
 const THREAD_TYPE_USER = 0 as const;
@@ -128,6 +129,8 @@ export interface SendToUserArgs {
   globalId: string | null;
   displayName: string | null;
   text: string;
+  /** Định dạng Zalo của `text` (đậm/nghiêng/màu/cỡ). Offset bám theo `text` đã trim. */
+  styles?: ZaloStyle[];
   media: PreparedMedia;
   /** Tên chiến dịch — ghi vào metadata để bong bóng hiện đúng nguồn. */
   broadcastName: string;
@@ -158,6 +161,7 @@ async function recordTextMessage(args: {
   contactId: string | null;
   globalId: string | null;
   text: string;
+  styles: ZaloStyle[];
   broadcastName: string;
   broadcastCreatedById: string;
   zaloMsgId: string;
@@ -193,7 +197,9 @@ async function recordTextMessage(args: {
       senderType: 'self',
       senderUid: account?.zaloUid || '',
       senderName: 'Staff',
-      content: args.text,
+      // Có định dạng → lưu khuôn JSON 'rtf' y như echo Zalo, để bong bóng /chat
+      // render đậm/màu thay vì hiện chữ trơ.
+      content: buildRtfContent(args.text, args.styles),
       contentType: 'text',
       sentAt: new Date(),
       ...attribution,
@@ -214,7 +220,9 @@ async function recordTextMessage(args: {
  */
 export async function sendToUser(args: SendToUserArgs): Promise<SendToUserResult> {
   const { orgId, zaloAccountId, uid, media, io } = args;
-  const text = args.text.trim();
+  // trimRich thay cho .trim(): offset của styles tính theo ký tự nên cắt khoảng
+  // trắng đầu chuỗi mà không dời khoảng sẽ tô đậm/tô màu lệch chỗ.
+  const { text, styles } = trimRich(args.text, args.styles ?? []);
   const skipSteps = args.skipSteps ?? 0;
   const warnings = [...media.warnings];
 
@@ -227,7 +235,10 @@ export async function sendToUser(args: SendToUserArgs): Promise<SendToUserResult
       label: 'text',
       run: async () => {
         const result = await zaloOps.sendMessage(
-          zaloAccountId, uid, THREAD_TYPE_USER, { msg: text }, io,
+          zaloAccountId, uid, THREAD_TYPE_USER,
+          // `styles` rỗng thì KHÔNG gửi khoá này — zca-js coi mảng rỗng là tin RTF.
+          styles.length ? { msg: text, styles } : { msg: text },
+          io,
         );
         // Lỗi ghi DB không được làm hỏng lượt gửi — tin đã ra khỏi máy rồi.
         await recordTextMessage({
@@ -237,6 +248,7 @@ export async function sendToUser(args: SendToUserArgs): Promise<SendToUserResult
           contactId: args.contactId,
           globalId: args.globalId,
           text,
+          styles,
           broadcastName: args.broadcastName,
           broadcastCreatedById: args.broadcastCreatedById,
           zaloMsgId: extractZaloMsgId(result),

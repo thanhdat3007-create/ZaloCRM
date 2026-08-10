@@ -31,4 +31,5 @@ export const ORG_SCOPED_MODELS: ReadonlySet<string> = new Set([
   'ZaloOaAppConfig', 'ZaloOaConnection', 'ZaloFormMapping', 'ZaloLeadEvent',
   'GroupBroadcast', 'GroupBroadcastRun', 'GroupBroadcastTarget',
   'ListBroadcast', 'ListBroadcastRun', 'ListBroadcastRecipient',
+  'BirthdayGreetingConfig', 'BirthdayGreeting',
 ]);

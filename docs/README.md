@@ -1,13 +1,14 @@
 # Tài liệu ZaloCRM
 
-Cập nhật: 2026-08-04 · Phiên bản: v3.4.0 · Phạm vi: bản Community
+Cập nhật: 2026-08-07 · Phiên bản package: v3.4.0 · Phạm vi: bản Community
 
 ## Tài liệu kỹ thuật
 
 | Tài liệu | Dùng khi nào |
 |---|---|
+| [danh-muc-tinh-nang.md](./danh-muc-tinh-nang.md) | Tra cứu toàn bộ tính năng, trạng thái Community/Extension, điều kiện bật và phần chưa hoàn thiện |
 | [project-overview-pdr.md](./project-overview-pdr.md) | Hiểu sản phẩm: vấn đề, người dùng, phạm vi domain, mô hình open-core, ràng buộc license |
-| [codebase-summary.md](./codebase-summary.md) | Onboard code: cây thư mục, 25 module backend, map frontend, đọc file nào trước |
+| [codebase-summary.md](./codebase-summary.md) | Onboard code: cây thư mục, 28 module backend, map frontend, đọc file nào trước |
 | [system-architecture.md](./system-architecture.md) | Kiến trúc runtime: boot flow, multi-tenant, auth/refresh, realtime, async, storage, deploy |
 | [code-standards.md](./code-standards.md) | Quy ước code hiện hành trước khi viết/PR |
 | [design-guidelines.md](./design-guidelines.md) | Dựng màn hình UI đúng theme/token/component defaults |

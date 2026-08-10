@@ -252,18 +252,30 @@ Chi phí: nửa ngày công. Đáng làm trước cả nhiều use case "hấp d
 
 ---
 
-### UC-15 · Chúc mừng sinh nhật học viên 🔧 *0.5 ngày*
+### UC-15 · Chúc mừng sinh nhật học viên ✅
 
-Cron hàng ngày quét hồ sơ có ngày sinh trùng hôm nay → nhắn riêng.
+**Marketing → Chúc sinh nhật.** Hệ thống quét hồ sơ có ngày sinh và tự nhắn riêng, không cần viết thêm dòng code nào.
+
+Ba dịp bật/tắt độc lập, mỗi dịp một mẫu tin riêng:
+
+| Dịp | Dùng khi nào |
+|-----|--------------|
+| Trước sinh nhật N ngày | Học viên VIP — nhắn sớm để họ chủ động sắp lịch |
+| Đúng ngày | Lời chúc chính |
+| Sau sinh nhật N ngày | Chúc muộn, cứu người bị bỏ sót |
+
+Chọn **giờ gửi trong ngày** (mặc định 09:00) — cả ba dịp dùng chung giờ này. Mặc định gửi bằng đúng nick đang chăm học viên đó, nên lời chúc đến từ người họ vẫn nhắn chứ không phải một nick lạ.
 
 ```
 ❌ "Chúc mừng sinh nhật! Nhân dịp này trung tâm giảm 30%..."
    → biến lời chúc thành quảng cáo, phản tác dụng hoàn toàn
 
-✅ "Chúc mừng sinh nhật chị Hương! Chúc chị một tuổi mới nhiều
-    niềm vui và sức khoẻ ạ ❤️"
+✅ "Chúc mừng sinh nhật {gender} {name}! Chúc {gender} một tuổi mới
+    nhiều niềm vui và sức khoẻ ạ ❤️"
    → không bán gì. Chấm hết.
 ```
+
+Mẫu tin dùng được biến `{gender}` (Anh/Chị), `{name}` (tên gọi), `{name_full}`, `{age}`, `{sale}`. Biến không có dữ liệu sẽ bị xoá khỏi tin — khách không bao giờ nhận nguyên chữ `{name}`.
 
 **Giá trị:** nhỏ nhưng bền. Một lời chúc không kèm bán hàng tạo thiện cảm thật, và người ta nhớ. Bán hàng để dịp khác.
 

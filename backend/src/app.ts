@@ -102,6 +102,8 @@ import { groupBroadcastRoutes } from './modules/zalo/group-broadcast-routes.js';
 import { setGroupBroadcastIo } from './modules/zalo/group-broadcast-worker.js';
 import { startListBroadcastWorker, stopListBroadcastWorker } from './modules/zalo/list-broadcast-queue.js';
 import { listBroadcastRoutes } from './modules/zalo/list-broadcast-routes.js';
+import { birthdayRoutes } from './modules/birthday/birthday-routes.js';
+import { setBirthdayIo } from './modules/birthday/birthday-sender.js';
 import { setListBroadcastIo } from './modules/zalo/list-broadcast-worker.js';
 // AI agent chăm sóc tự động — gate bởi config.aiAgentEnabled (env AI_AGENT_ENABLED).
 import { aiAgentRoutes } from './modules/ai-agent/ai-agent-routes.js';
@@ -355,6 +357,7 @@ async function bootstrap() {
   await app.register(groupBroadcastRoutes); // Gửi nhóm theo lịch (🟢 Community)
   await app.register(listBroadcastRoutes); // Gửi tệp khách hàng hàng loạt (🟢 Community)
   await app.register(customerListRoutes); // Tệp khách hàng (🟢 Community)
+  await app.register(birthdayRoutes); // Chúc sinh nhật tự động (🟢 Community)
   await app.register(customerListEntryRoutes);
   await app.register(groupModerationRoutes);
   await app.register(friendRoutes);
@@ -445,6 +448,11 @@ async function bootstrap() {
       // Lập lịch chiến dịch nhắn tệp KH — mỗi phút tạo lát gửi kế tiếp trong khung giờ.
       const { startListBroadcastCron } = await import('./modules/zalo/list-broadcast-cron.js');
       startListBroadcastCron();
+      // Chúc sinh nhật (🟢 Community): 10 phút/lần dựng hàng đợi hôm nay,
+      // 1 phút/lần gửi phần đã tới giờ. Không cần worker riêng — hàng đợi nằm ở DB.
+      setBirthdayIo(io); // lời chúc hiện live trong /chat
+      const { startBirthdayCron } = await import('./modules/birthday/birthday-cron.js');
+      startBirthdayCron();
     }
     // Tệp khách hàng (🟢 Community): enrichment worker + event handlers
     if (config.nodeEnv !== 'test') {
@@ -534,6 +542,12 @@ async function bootstrap() {
           logger.warn('[shutdown] stopListBroadcastCron lỗi:', e);
         }
         await stopListBroadcastWorker().catch((e) => logger.warn('[shutdown] stopListBroadcastWorker lỗi:', e));
+        try {
+          const { stopBirthdayCron } = await import('./modules/birthday/birthday-cron.js');
+          stopBirthdayCron();
+        } catch (e) {
+          logger.warn('[shutdown] stopBirthdayCron lỗi:', e);
+        }
         await stopAgentReplyWorker().catch((e) => logger.warn('[shutdown] stopAgentReplyWorker lỗi:', e));
         await app.close().catch((e) => logger.warn('[shutdown] app.close lỗi:', e));
         logger.info('[shutdown] đóng gọn xong.');

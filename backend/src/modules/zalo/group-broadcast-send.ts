@@ -31,6 +31,7 @@ import { sendNativeVideo } from '../../shared/video-processor.js';
 import { zaloPool } from './zalo-pool.js';
 import { downloadMediaToTemp, extractZaloMsgId } from '../chat/chat-media-helpers.js';
 import type { ResolvedAttachment } from '../chat/message-template-service.js';
+import { buildRtfContent, trimRich, type ZaloStyle } from '../../shared/zalo-rich-text.js';
 
 /** threadType của Zalo: 0 = 1-1, 1 = nhóm. */
 const THREAD_TYPE_GROUP = 1 as const;
@@ -63,6 +64,8 @@ export interface SendToGroupArgs {
   groupId: string;
   groupName: string;
   text: string;
+  /** Định dạng Zalo của `text` (đậm/nghiêng/màu/cỡ). Offset bám theo `text` đã trim. */
+  styles?: ZaloStyle[];
   media: PreparedMedia;
   /** Tên chiến dịch — ghi vào metadata để bong bóng hiện đúng nguồn. */
   broadcastName: string;
@@ -202,6 +205,7 @@ async function recordTextMessage(args: {
   groupId: string;
   groupName: string;
   text: string;
+  styles: ZaloStyle[];
   broadcastName: string;
   broadcastCreatedById: string;
   zaloMsgId: string;
@@ -244,7 +248,9 @@ async function recordTextMessage(args: {
       senderType: 'self',
       senderUid: conversation.zaloAccount.zaloUid || '',
       senderName: 'Staff',
-      content: args.text,
+      // Có định dạng → lưu khuôn JSON 'rtf' y như echo Zalo, để bong bóng /chat
+      // render đậm/màu thay vì hiện chữ trơ.
+      content: buildRtfContent(args.text, args.styles),
       contentType: 'text',
       sentAt: new Date(),
       ...attribution,
@@ -261,7 +267,9 @@ async function recordTextMessage(args: {
  */
 export async function sendToGroup(args: SendToGroupArgs): Promise<SendToGroupResult> {
   const { orgId, zaloAccountId, groupId, groupName, broadcastName, broadcastCreatedById, media, io } = args;
-  const text = args.text.trim();
+  // trimRich thay cho .trim(): offset của styles tính theo ký tự nên cắt khoảng
+  // trắng đầu chuỗi mà không dời khoảng sẽ tô đậm/tô màu lệch chỗ.
+  const { text, styles } = trimRich(args.text, args.styles ?? []);
   const skipSteps = args.skipSteps ?? 0;
   const warnings = [...media.warnings];
 
@@ -274,12 +282,15 @@ export async function sendToGroup(args: SendToGroupArgs): Promise<SendToGroupRes
       label: 'text',
       run: async () => {
         const result = await zaloOps.sendMessage(
-          zaloAccountId, groupId, THREAD_TYPE_GROUP, { msg: text }, io,
+          zaloAccountId, groupId, THREAD_TYPE_GROUP,
+          // `styles` rỗng thì KHÔNG gửi khoá này — zca-js coi mảng rỗng là tin RTF.
+          styles.length ? { msg: text, styles } : { msg: text },
+          io,
         );
         // Ghi Message ngay để tin hiện trong /chat của nhóm. Lỗi ghi DB không
         // được làm hỏng lượt gửi — tin đã ra khỏi máy rồi.
         await recordTextMessage({
-          orgId, zaloAccountId, groupId, groupName, text, broadcastName, broadcastCreatedById,
+          orgId, zaloAccountId, groupId, groupName, text, styles, broadcastName, broadcastCreatedById,
           zaloMsgId: extractZaloMsgId(result),
         }).catch((e) => {
           logger.warn(`[group-broadcast-send] ghi Message lỗi (group=${groupId}): ${(e as Error).message}`);

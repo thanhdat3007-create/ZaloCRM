@@ -216,6 +216,7 @@ services:
   # đang tải DB virus (~vài phút sau khi start) hoặc tắt. App chỉ THẬT SỰ quét khi
   # MEDIA_AV_ENABLED=1. Chưa bật → scanBuffer trả 'skipped' ngay, 0 kết nối.
   clamav:
+    platform: linux/amd64
     image: clamav/clamav:1.4
     container_name: zalo-crm-clamav
     restart: unless-stopped

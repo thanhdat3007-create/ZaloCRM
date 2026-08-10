@@ -25,6 +25,7 @@ import {
   resolveTemplateAttachments,
   type ValidationFailure,
 } from './message-template-service.js';
+import { normalizeZaloStyles } from '../../shared/zalo-rich-text.js';
 
 const BASE = '/api/v1/message-templates';
 const DEFAULT_LIMIT = 100;
@@ -33,6 +34,8 @@ const MAX_LIMIT = 200;
 interface TemplateBody {
   name?: unknown;
   content?: unknown;
+  /** `{ styles: [{st,start,len}] }` — định dạng Zalo do rich-text-editor gửi lên. */
+  contentRich?: unknown;
   visibility?: unknown;
   folderId?: unknown;
   tagIds?: unknown;
@@ -61,12 +64,17 @@ function visibilityScope(userId: string) {
 
 /**
  * Bất biến của bảng: `content` LUÔN bằng `contentRich.text`.
- * Màn CE soạn chữ thuần (không định dạng) nên styles rỗng. Ghi lại contentRich
- * mỗi khi đổi content — để nguyên bản cũ sẽ khiến chỗ đọc `contentRich.text`
- * (VD popup chèn mẫu trong chat) chèn đúng đoạn chữ CŨ.
+ * `content` là nguồn sự thật của chữ; body chỉ góp thêm `contentRich.styles`
+ * (đậm/nghiêng/màu/cỡ do rich-text-editor trích ra). Ghi lại contentRich mỗi khi
+ * đổi content — để nguyên bản cũ sẽ khiến chỗ đọc `contentRich.text` (VD popup
+ * chèn mẫu trong chat) chèn đúng đoạn chữ CŨ, và styles bám sai vị trí ký tự.
  */
-function richFor(content: string) {
-  return { text: content, styles: [] as unknown[] };
+function richFor(content: string, rawRich: unknown) {
+  const styles =
+    rawRich && typeof rawRich === 'object'
+      ? normalizeZaloStyles((rawRich as { styles?: unknown }).styles, content.length)
+      : [];
+  return { text: content, styles };
 }
 
 function normalizeTagIds(raw: unknown): string[] | undefined {
@@ -150,7 +158,7 @@ export async function messageTemplateRoutes(app: FastifyInstance) {
             orgId,
             name: (body.name as string).trim(),
             content,
-            contentRich: richFor(content),
+            contentRich: richFor(content, body.contentRich),
             visibility: body.visibility === 'public' ? 'public' : 'private',
             folderId: typeof body.folderId === 'string' ? body.folderId : null,
             tagIds: normalizeTagIds(body.tagIds) ?? [],
@@ -230,9 +238,16 @@ export async function messageTemplateRoutes(app: FastifyInstance) {
             name: (nextName as string).trim(),
             content: typeof nextContent === 'string' ? nextContent : '',
             // Giữ bất biến content === contentRich.text (xem ghi chú ở richFor).
-            ...(body.content === undefined
+            // Sửa chữ mà KHÔNG kèm contentRich → bỏ styles cũ: offset của chúng bám
+            // theo đoạn chữ trước đó, giữ lại sẽ tô đậm/tô màu lệch chỗ.
+            ...(body.content === undefined && body.contentRich === undefined
               ? {}
-              : { contentRich: richFor(typeof nextContent === 'string' ? nextContent : '') }),
+              : {
+                  contentRich: richFor(
+                    typeof nextContent === 'string' ? nextContent : '',
+                    body.contentRich,
+                  ),
+                }),
             ...(body.visibility === undefined
               ? {}
               : { visibility: body.visibility === 'public' ? 'public' : 'private' }),

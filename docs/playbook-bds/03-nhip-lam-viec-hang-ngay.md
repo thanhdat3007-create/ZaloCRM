@@ -77,6 +77,8 @@ Khách sinh nhật hôm nay. Nhắn chúc — không bán gì cả:
 
 Đây là cớ liên hệ tự nhiên nhất trong nghề. Khách im lặng 2 tháng có thể rep lại từ một tin chúc mừng — và hệ thống cộng **+15 điểm** cho hành vi "khách chủ động chat lại sau im lặng".
 
+> 💡 Không muốn làm tay bước này: **Marketing → Chúc sinh nhật** bật gửi tự động đúng giờ bạn chọn, có thêm tuỳ chọn nhắn trước / nhắn sau sinh nhật vài ngày. Tin vẫn đi từ đúng nick đang chăm khách.
+
 ---
 
 # ☀️ TRONG NGÀY — phản xạ khi làm việc

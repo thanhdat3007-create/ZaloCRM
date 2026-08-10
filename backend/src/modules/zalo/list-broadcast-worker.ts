@@ -25,6 +25,7 @@ import { zaloRateLimiter } from './zalo-rate-limiter.js';
 import { resolveTemplateAttachments } from '../chat/message-template-service.js';
 import { prepareMedia, classifySendError, GroupSendError } from './group-broadcast-send.js';
 import { resolveUidForNick, sendToUser } from './list-broadcast-send.js';
+import { stylesFromContentRich, trimRich, type ZaloStyle } from '../../shared/zalo-rich-text.js';
 import { dayBoundsUtc, isWithinWindow, windowSpecOf } from './list-broadcast-window.js';
 import { MAX_RECIPIENTS_PER_RUN } from './list-broadcast-cost.js';
 
@@ -116,7 +117,7 @@ async function processRunInTenant(runId: string): Promise<void> {
     where: { id: runId },
     include: {
       broadcast: {
-        include: { template: { select: { content: true, attachments: true } } },
+        include: { template: { select: { content: true, contentRich: true, attachments: true } } },
       },
     },
   });
@@ -159,7 +160,13 @@ async function processRunInTenant(runId: string): Promise<void> {
   if (dailyRemaining <= 0) return finishSkipped('DAILY_QUOTA_REACHED');
 
   // ── Nội dung gửi ──────────────────────────────────────────────────────────
-  const text = (broadcast.template.content ?? '').trim();
+  // Chữ + định dạng Zalo đi cùng nhau: trimRich dời offset của styles theo phần
+  // khoảng trắng bị cắt, nên đậm/màu vẫn bám đúng ký tự sau khi trim.
+  const rawText = broadcast.template.content ?? '';
+  const { text, styles } = trimRich(
+    rawText,
+    stylesFromContentRich(broadcast.template.contentRich, rawText),
+  );
   const attachments = await resolveTemplateAttachments(orgId, broadcast.template.attachments);
   const usableAttachments = attachments.filter((a) => !a.missing);
   if (!text && usableAttachments.length === 0) {
@@ -231,6 +238,7 @@ async function processRunInTenant(runId: string): Promise<void> {
           recipient,
           nick: nick.nick,
           text,
+          styles,
           media,
         });
 
@@ -314,9 +322,10 @@ async function deliverOne(args: {
   };
   nick: UsableNick;
   text: string;
+  styles: ZaloStyle[];
   media: Awaited<ReturnType<typeof prepareMedia>>;
 }): Promise<DeliverOutcome> {
-  const { orgId, broadcast, recipient, nick, text, media } = args;
+  const { orgId, broadcast, recipient, nick, text, styles, media } = args;
 
   // ── Tìm UID theo góc nhìn của chính nick này ────────────────────────────
   let resolved;
@@ -366,6 +375,7 @@ async function deliverOne(args: {
       globalId: resolved.globalId,
       displayName: recipient.displayName,
       text,
+      styles,
       media,
       broadcastName: broadcast.name,
       broadcastCreatedById: broadcast.createdById,

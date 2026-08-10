@@ -20,6 +20,7 @@ import { zaloPool } from './zalo-pool.js';
 import { zaloRateLimiter } from './zalo-rate-limiter.js';
 import { resolveTemplateAttachments } from '../chat/message-template-service.js';
 import { sendToGroup, prepareMedia, classifySendError, GroupSendError } from './group-broadcast-send.js';
+import { stylesFromContentRich, trimRich } from '../../shared/zalo-rich-text.js';
 import { nextOccurrence, scheduleSpecOf } from './group-broadcast-schedule.js';
 
 /** Đạt ngưỡng này thì chiến dịch tự tạm dừng (van an toàn nick chết / bị kick). */
@@ -76,7 +77,7 @@ async function processRunInTenant(runId: string): Promise<void> {
     include: {
       broadcast: {
         include: {
-          template: { select: { content: true, attachments: true } },
+          template: { select: { content: true, contentRich: true, attachments: true } },
           zaloAccount: { select: { id: true, archivedAt: true, chatEnabled: true } },
         },
       },
@@ -109,7 +110,13 @@ async function processRunInTenant(runId: string): Promise<void> {
   });
 
   // ── Nội dung gửi ──────────────────────────────────────────────────────────
-  const text = (broadcast.template.content ?? '').trim();
+  // Chữ + định dạng Zalo đi cùng nhau: trimRich dời offset của styles theo phần
+  // khoảng trắng bị cắt, nên đậm/màu vẫn bám đúng ký tự sau khi trim.
+  const rawText = broadcast.template.content ?? '';
+  const { text, styles } = trimRich(
+    rawText,
+    stylesFromContentRich(broadcast.template.contentRich, rawText),
+  );
   const attachments = await resolveTemplateAttachments(orgId, broadcast.template.attachments);
   const usableAttachments = attachments.filter((a) => !a.missing);
   if (!text && usableAttachments.length === 0) {
@@ -151,6 +158,7 @@ async function processRunInTenant(runId: string): Promise<void> {
           groupId: target.groupId,
           groupName: target.groupName,
           text,
+          styles,
           media,
           broadcastName: broadcast.name,
           // Người bấm phát chiến dịch — để tin bắn hàng loạt vẫn truy được về người chịu

@@ -2,7 +2,6 @@ node_modules/
 dist/
 # Gói cài standalone do scripts/pack-standalone.sh sinh ra — build artifact, không commit
 release/
-.env
 *.log
 backups/
 .DS_Store
@@ -53,3 +52,4 @@ public-key-telegram
 public-key-telegram-product
 # Thư mục file upload khi chạy dev local (bin/dev)
 .local-files/
+config.bat

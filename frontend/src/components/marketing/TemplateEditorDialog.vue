@@ -26,15 +26,20 @@
           hide-details="auto"
         />
 
-        <v-textarea
-          v-model="content"
-          label="Nội dung chữ"
-          variant="outlined"
-          rows="5"
-          auto-grow
-          hide-details="auto"
-          placeholder="Để trống nếu chỉ gửi ảnh/tệp"
-        />
+        <div>
+          <div class="text-subtitle-2 mb-1">Nội dung chữ</div>
+          <RichTextEditor
+            ref="editorRef"
+            v-model="content"
+            :show-toolbar="true"
+            :submit-on-enter="false"
+            placeholder="Để trống nếu chỉ gửi ảnh/tệp"
+            class="tpl-rich"
+          />
+          <div class="text-caption text-medium-emphasis mt-1">
+            Bôi đen chữ rồi bấm nút trên thanh công cụ để in đậm, tô màu, đổi cỡ — khách nhận đúng định dạng này trên Zalo.
+          </div>
+        </div>
 
         <v-select
           v-model="visibility"
@@ -133,10 +138,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import MediaPickerDialog from '@/components/media/MediaPickerDialog.vue';
+import RichTextEditor from '@/components/chat/rich-text-editor.vue';
 import type { MediaAssetItem } from '@/api/media';
-import { useCeMessageTemplates, type CeMessageTemplate } from '@/composables/use-ce-message-templates';
+import {
+  useCeMessageTemplates,
+  type CeMessageTemplate,
+  type CeZaloStyle,
+} from '@/composables/use-ce-message-templates';
 
 const props = defineProps<{ templateId?: string }>();
 const emit = defineEmits<{ close: []; saved: [template: CeMessageTemplate] }>();
@@ -152,8 +162,19 @@ interface DraftAttachment {
   previewUrl: string | null;
 }
 
+/**
+ * `modelValue` của RichTextEditor là PLAIN TEXT (không phải HTML) — định dạng nằm
+ * riêng trong `getRichPayload().styles`, nên phải đọc qua ref lúc lưu chứ không
+ * suy ra được từ `content`.
+ */
+type RichEditorExposed = {
+  getRichPayload: () => { text: string; styles: CeZaloStyle[] };
+  applyRichPayload: (p: { text: string; styles?: CeZaloStyle[] }, opts?: { focus?: boolean }) => void;
+};
+
 const { createTemplate, updateTemplate, fetchTemplate, saving, error } = useCeMessageTemplates();
 
+const editorRef = ref<RichEditorExposed | null>(null);
 const name = ref('');
 const content = ref('');
 const visibility = ref<'public' | 'private'>('private');
@@ -175,6 +196,13 @@ onMounted(async () => {
   name.value = loaded.template.name;
   content.value = loaded.template.content;
   visibility.value = loaded.template.visibility;
+  // Nạp lại định dạng: `content` mới chỉ dựng chữ trơ trong editor. Chờ nextTick để
+  // RichTextEditor mount xong rồi mới applyRichPayload — gọi sớm thì ref còn null.
+  await nextTick();
+  editorRef.value?.applyRichPayload({
+    text: loaded.template.content,
+    styles: loaded.template.contentRich?.styles ?? [],
+  });
   // Bỏ hẳn đính kèm đã bị xoá khỏi kho: gửi lại id đó khi lưu sẽ luôn 422
   // ASSET_NOT_ACCESSIBLE, khoá cứng việc sửa mẫu. Báo cho người dùng biết.
   const missing = loaded.attachments.filter((a) => a.missing);
@@ -222,9 +250,13 @@ function move(index: number, delta: number) {
 
 async function save() {
   localError.value = '';
+  // Nguồn sự thật lúc lưu là editor, KHÔNG phải `content`: styles chỉ có ở payload,
+  // và `text` phải lấy cùng lượt để offset của styles khớp từng ký tự.
+  const rich = editorRef.value?.getRichPayload() ?? { text: content.value, styles: [] };
   const payload = {
     name: name.value.trim(),
-    content: content.value,
+    content: rich.text,
+    contentRich: { text: rich.text, styles: rich.styles },
     visibility: visibility.value,
     attachments: attachments.value.map((a) => ({ mediaAssetId: a.mediaAssetId, caption: a.caption })),
   };
@@ -234,3 +266,8 @@ async function save() {
   if (saved) emit('saved', saved);
 }
 </script>
+
+<style scoped>
+/* Vùng soạn cao thoáng như ô cũ (v-textarea rows=5), vẫn cuộn khi mẫu dài. */
+.tpl-rich :deep(.tiptap-input) { min-height: 140px; max-height: 320px; font-size: 13.5px; }
+</style>

@@ -25,10 +25,25 @@ export interface CeResolvedAttachment {
   missing: boolean;
 }
 
+/** Khoảng định dạng Zalo: b/i/u/s, c_RRGGBB (màu), f_NN (cỡ), lst_1/lst_2 (danh sách). */
+export interface CeZaloStyle {
+  st: string;
+  start: number;
+  len: number;
+}
+
+/** `text` LUÔN bằng `content` — server derive lại, client chỉ đóng góp `styles`. */
+export interface CeContentRich {
+  text: string;
+  styles: CeZaloStyle[];
+}
+
 export interface CeMessageTemplate {
   id: string;
   name: string;
   content: string;
+  /** null với mẫu cũ tạo trước khi có định dạng → coi như không có style. */
+  contentRich: CeContentRich | null;
   visibility: 'public' | 'private';
   folderId: string | null;
   tagIds: string[];
@@ -39,6 +54,8 @@ export interface CeMessageTemplate {
 export interface CeTemplatePayload {
   name: string;
   content: string;
+  /** Gửi KÈM `content` mỗi lần sửa chữ — thiếu nó server sẽ bỏ định dạng cũ. */
+  contentRich?: CeContentRich;
   visibility?: 'public' | 'private';
   attachments?: CeTemplateAttachmentInput[];
 }

@@ -1,6 +1,6 @@
 # ZCRM v3.4 — Quản lý nhiều tài khoản Zalo cá nhân
 
-Quản lý tập trung nhiều nick Zalo trên một giao diện web: chat real-time, gửi ảnh/video/file, cầu **Zalo ↔ Telegram** 2 chiều, **AI agent tự chăm khách**, phân tích hội thoại sale qua MCP, báo cáo và PWA mobile.
+Quản lý tập trung nhiều nick Zalo trên một giao diện web: chat real-time, gửi ảnh/video/file, cầu **Zalo ↔ Telegram** 2 chiều, **AI agent tự chăm khách**, phân tích hội thoại sale qua MCP, báo cáo và giao diện mobile responsive.
 
 **Mã nguồn mở** theo **AGPL-3.0** (dual-license thương mại) — [github.com/rocket-ai-global/rocket-zalo-crm](https://github.com/rocket-ai-global/rocket-zalo-crm)
 
@@ -19,6 +19,8 @@ Quản lý tập trung nhiều nick Zalo trên một giao diện web: chat real-
 | ![Nhóm](docs/release-images/v3.4/05-groups.png) | ![Lịch hẹn](docs/release-images/v3.4/06-appointments.png) |
 
 ## Tính năng
+
+> 📚 Danh mục đầy đủ, có trạng thái Community/Extension, điều kiện bật và giới hạn: [docs/danh-muc-tinh-nang.md](docs/danh-muc-tinh-nang.md)
 
 <a id="ai-phat-trien-them"></a>
 
@@ -62,8 +64,8 @@ Kèm REST API tương đương và bộ **AgentKit** (skills + subagent) dùng n
 | **Lịch hẹn** | Nhắc tự động; cảnh báo tin chưa trả lời >30 phút, Zalo mất kết nối |
 | **Báo cáo** | Điều hành · vận hành nick · hiệu suất sale/team · tương tác khách · audit · phân tích nâng cao · xuất Excel |
 | **Bảo mật** | Refresh token rotation · CSP + security headers · RBAC phòng ban/đội nhóm · audit log · Privacy PIN |
-| **API & tích hợp** | Public REST API + Postman · Webhook · API cho ZCRM Mobile App · Google Sheets, Telegram, Facebook, Zapier |
-| **Giao diện** | Theme sáng/tối, responsive, PWA cài lên điện thoại |
+| **API & tích hợp** | Public REST API + Postman · Webhook · API cho ZCRM Mobile App · Google Sheets, Telegram, Zapier; Facebook Lead Ads thuộc Extension |
+| **Giao diện** | Responsive, layout mobile riêng, manifest cài đặt; service worker PWA đang tạm tắt |
 
 > 📣 Lịch sử thay đổi từng phiên bản: [CHANGELOG.md](CHANGELOG.md)
 
@@ -157,14 +159,14 @@ docker compose logs -f app         # xem log ứng dụng
 docker exec zalo-crm-db pg_dump -U crmuser zalocrm > backup.sql   # backup thủ công
 ```
 
-Hệ thống đã có service backup tự động chạy hàng ngày, giữ 7 ngày / 4 tuần / 3 tháng.
+Docker Compose có service backup PostgreSQL tự động theo chính sách 7 ngày / 4 tuần / 3 tháng; đây là service tùy chọn, cần bật và kiểm tra riêng khi triển khai.
 
 ## Công nghệ sử dụng
 
 | Thành phần | Công nghệ |
 |---|---|
 | Backend | Node.js 20 · Fastify 5 · Prisma 7 |
-| Frontend | Vue 3 · Vuetify 3 · TipTap · Chart.js · Pinia |
+| Frontend | Vue 3 · Vuetify 4 · TipTap · Chart.js · Pinia |
 | AI | Anthropic Claude · OpenAI · Gemini · Qwen · Kimi |
 | Dữ liệu | PostgreSQL 16 · Redis 7 · MinIO (S3-compatible) |
 | Real-time | Socket.IO |

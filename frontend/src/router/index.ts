@@ -238,6 +238,8 @@ const routes: RouteRecordRaw[] = [
           { path: 'list-broadcasts/new', name: 'CE.ListBroadcastNew', component: () => import('@/views/marketing/ListBroadcastEditView.vue'), meta: { requiresAuth: true, resource: 'broadcast' } },
           { path: 'list-broadcasts/:id', name: 'CE.ListBroadcastDetail', component: () => import('@/views/marketing/ListBroadcastDetailView.vue'), meta: { requiresAuth: true, resource: 'broadcast' } },
           { path: 'list-broadcasts/:id/edit', name: 'CE.ListBroadcastEdit', component: () => import('@/views/marketing/ListBroadcastEditView.vue'), meta: { requiresAuth: true, resource: 'broadcast' } },
+          // Chúc sinh nhật tự động — open-core.
+          { path: 'birthday', name: 'CE.Birthday', component: () => import('@/views/marketing/BirthdayGreetingView.vue'), meta: { requiresAuth: true, resource: 'broadcast' } },
           // Alias lịch sử: nút "Tạo Mục tiêu" trỏ /marketing/triggers/tao-moi (route của bản EE).
           // Bản Community không có Mục tiêu nên trước đây link này 404 — chuyển về đúng
           // trang tạo chiến dịch nhắn tệp, giữ nguyên ?listId để chọn sẵn tệp.

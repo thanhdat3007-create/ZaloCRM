@@ -18,7 +18,7 @@ Tài liệu này là bản đồ onboard cho người mới. Kiến trúc chi ti
 | `assets/` | Tài nguyên tĩnh dùng cho README/branding |
 | (root) | `docker-compose.yml` / `docker-compose.dev.yml`, `.env.example`, `README.md`, `CHANGELOG.md`, `NOTICE`, `LICENSE` (AGPL-3.0) |
 
-## 2. Backend — 25 module (`backend/src/modules/*`)
+## 2. Backend — 28 module (`backend/src/modules/*`)
 
 Kiến trúc phẳng: mỗi module có routes + service(s) + helper riêng, **không có repository layer** — gọi Prisma trực tiếp từ route handler/service, không có controller class (hàm đăng ký route đóng vai controller).
 
@@ -29,6 +29,7 @@ Kiến trúc phẳng: mỗi module có routes + service(s) + helper riêng, **kh
 | `analytics` | Analytics tùy biến + saved report | routes + service + `reports/` |
 | `api` | Public API + webhook settings/dispatch | routes + service |
 | `auth` | Login, JWT/refresh token, roles, teams, orgs, onboarding, security audit | routes + service + middleware |
+| `birthday` | Chúc sinh nhật tự động: cấu hình 3 dịp (trước/đúng ngày/sau), lập kế hoạch hàng đợi + gửi theo giờ chọn | routes + planner/sender + crons |
 | `branding` | Branding trang login theo org | routes |
 | `campaign` | Quản lý chiến dịch | routes + service |
 | `chat` | Conversation, message, folder, preset, attachment, reaction, Socket.IO, mẫu tin nhắn (CRUD + đính kèm, dùng cho gửi nhóm theo lịch) | routes + helpers + service |
@@ -50,7 +51,7 @@ Kiến trúc phẳng: mỗi module có routes + service(s) + helper riêng, **kh
 | `tags` | Tag taxonomy v2 (definition, friend tag, contact CRM tag) | routes + service |
 | `zalo` | Pool tài khoản zca-js, friend, group, label, sync, presence, credential, gửi nhóm hàng loạt theo lịch (`group-broadcast-*`, BullMQ queue riêng) — module lớn nhất (45 file) | routes + services + BullMQ queue/worker + crons |
 
-64 file `*-routes.ts`, ~389 lần đăng ký endpoint (đếm bằng grep trên `backend/src/modules/**/*-routes.ts`).
+70 file `*-routes.ts`, ~445 lần đăng ký endpoint (đếm bằng grep trên `backend/src/modules/**/*-routes.ts`).
 
 ## 3. `backend/src/shared/*` — tầng dùng chung
 
